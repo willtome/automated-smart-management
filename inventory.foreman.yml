@@ -4,5 +4,5 @@ validate_certs: false
 compose:
   ansible_host: foreman_ip
 keyed_groups:
-  - prefix: sat
+  - prefix: env
     key: foreman_environment_name
