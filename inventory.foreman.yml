@@ -1,0 +1,3 @@
+---
+plugin: redhat.satellite.foreman
+validate_certs: false
