@@ -48,6 +48,7 @@
         Group: "{{ HOSTS_GROUP }}"
         Platform: linux
         Owner: "{{ OWNER | default('ansible')}}"
+        Demo: smart_mgmt
     register: ec2_out
     loop: "{{ range(start_idx | int, (count | int)) | list }}"
 
