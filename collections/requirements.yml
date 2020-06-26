@@ -1,0 +1,6 @@
+---
+collections:
+  - redhat.satellite
+  - redhat.insights
+  - ansible.tower
+  - amazon.aws
