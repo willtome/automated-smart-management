@@ -1,3 +1,8 @@
 ---
 plugin: redhat.satellite.foreman
 validate_certs: false
+compose:
+  ansible_host: foreman_ip
+keyed_groups:
+  - prefix: sat
+    key: foreman_environment_name
