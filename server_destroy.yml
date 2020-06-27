@@ -16,7 +16,7 @@
       state: absent
       region: "{{ ec2_region }}"
       wait: yes
-      instance_ids: "{{ ec2_id }}"
+      instance_ids: "{{ instance_id }}"
 
   - name: delete host from satellite
     redhat.satellite.host:

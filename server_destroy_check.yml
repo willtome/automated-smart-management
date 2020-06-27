@@ -13,4 +13,4 @@
   tasks:
   - name: server info
     debug:
-      msg: "This server will be destroyed. ID: {{ ec2_id }}"
+      msg: "This server will be destroyed. ID: {{ instance_id }}"
