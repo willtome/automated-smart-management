@@ -14,7 +14,7 @@
   tasks:
   - name: set name
     set_fact: 
-      vm_name: "{{ HOSTS | regex_search('(\\w*)') }}"
+      vm_name: "{{ PREFIX }}"
 
   - name: create firewall policy
     ec2_group:
