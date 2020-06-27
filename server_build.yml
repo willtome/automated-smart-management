@@ -45,7 +45,7 @@
         Name: "{{ vm_name }}-{{item}}"
       instance_tags:
         Name: "{{ vm_name }}-{{ item }}"
-        Group: "{{ HOSTS_GROUP }}"
+        Group: "{{ server_type }}"
         Platform: linux
         Owner: "{{ OWNER | default('ansible')}}"
         Demo: smart_mgmt
