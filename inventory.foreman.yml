@@ -1,8 +1,6 @@
 ---
 plugin: redhat.satellite.foreman
 validate_certs: false
-compose:
-  ansible_host: foreman_ip
 keyed_groups:
   - prefix: env
-    key: foreman_environment_name
+    key: foreman_content_facet_attributes.lifecycle_environment_name
