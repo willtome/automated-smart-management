@@ -14,7 +14,7 @@
   - name: destroy cloud instance
     ec2:
       state: absent
-      region: "{{ ec2_region }}"
+      region: "{{ placement.region }}"
       wait: yes
       instance_ids: "{{ instance_id }}"
 
