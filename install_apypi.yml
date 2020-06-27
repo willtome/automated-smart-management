@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+  - shell: source /var/lib/awx/venv/ansible/bin/activate; pip freeze
