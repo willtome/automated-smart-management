@@ -18,7 +18,7 @@
     
   - name: updated package list
     debug:
-      msg: "{% if item[0] in packages %}{{ packages[item[0]][0].version }}-{{ packages[item[0]][0].release }}.{{ packages[item[0]][0].arch }} >>> {{ item[1] }} {% else %} {{ item[1] }} {% endif %}"
+      msg: "{% if item[0] in packages %}{{ packages[item[0]][0].version }}{% endif %}"
     loop: "{{ updates.changes.updated }}"
     loop_control:
       label: "{{ item[0] }}"
