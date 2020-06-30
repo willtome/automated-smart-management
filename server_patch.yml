@@ -18,4 +18,5 @@
     
   - name: updated package list
     debug:
-      msg: "{{ updates }}" 
+      msg: "{{ item[0] }}" 
+    loop: "{{ updates.changes.updated }}"
