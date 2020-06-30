@@ -1,5 +1,6 @@
 ---
 - hosts: "env_{{ server_type }}"
+  become: yes
   vars:
     check_only: yes
 
