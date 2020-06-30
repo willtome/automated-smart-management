@@ -8,7 +8,7 @@
       username: "{{ lookup('env', 'FOREMAN_USER') }}"
       password: "{{ lookup('env', 'FOREMAN_PASSWORD') }}"
       validate_certs: no
-      organization: undef
+    organization: undef
     lifecycle_environment: undef
     content_view: undef
 
@@ -17,4 +17,5 @@
     redhat.satellite.content_view_version:
       <<: *login
       content_view: "{{ content_view }}"
+      organization: "{{ organization }}"
       lifecycle_environments: "{{ lifecycle_environment }}"
