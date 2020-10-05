@@ -205,6 +205,7 @@ from ansible.module_utils.common.dict_transformations import camel_dict_to_snake
 
 from ..module_utils.core import AnsibleAWSModule
 from ..module_utils.ec2 import AWSRetry
+from ..module_utils.ec2 import ansible_dict_to_boto3_filter_list
 from ..module_utils.ec2 import ansible_dict_to_boto3_tag_list
 from ..module_utils.ec2 import boto3_tag_list_to_ansible_dict
 from ..module_utils.ec2 import compare_aws_tags
@@ -216,10 +217,12 @@ def vpc_exists(module, vpc, name, cidr_block, multi):
     otherwise it will assume the VPC does not exist and thus return None.
     """
     try:
-        matching_vpcs = vpc.describe_vpcs(Filters=[{'Name': 'tag:Name', 'Values': [name]}, {'Name': 'cidr-block', 'Values': cidr_block}])['Vpcs']
+        vpc_filters = ansible_dict_to_boto3_filter_list({'tag:Name': name, 'cidr-block': cidr_block})
+        matching_vpcs = vpc.describe_vpcs(aws_retry=True, Filters=vpc_filters)['Vpcs']
         # If an exact matching using a list of CIDRs isn't found, check for a match with the first CIDR as is documented for C(cidr_block)
         if not matching_vpcs:
-            matching_vpcs = vpc.describe_vpcs(Filters=[{'Name': 'tag:Name', 'Values': [name]}, {'Name': 'cidr-block', 'Values': [cidr_block[0]]}])['Vpcs']
+            vpc_filters = ansible_dict_to_boto3_filter_list({'tag:Name': name, 'cidr-block': [cidr_block[0]]})
+            matching_vpcs = vpc.describe_vpcs(aws_retry=True, Filters=vpc_filters)['Vpcs']
     except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
         module.fail_json_aws(e, msg="Failed to describe VPCs")
 
@@ -271,7 +274,8 @@ def update_vpc_tags(connection, module, vpc_id, tags, name):
     tags.update({'Name': name})
     tags = dict((k, to_native(v)) for k, v in tags.items())
     try:
-        current_tags = dict((t['Key'], t['Value']) for t in connection.describe_tags(Filters=[{'Name': 'resource-id', 'Values': [vpc_id]}])['Tags'])
+        filters = ansible_dict_to_boto3_filter_list({'resource-id': vpc_id})
+        current_tags = dict((t['Key'], t['Value']) for t in connection.describe_tags(Filters=filters, aws_retry=True)['Tags'])
         tags_to_update, dummy = compare_aws_tags(current_tags, tags, False)
         if tags_to_update:
             if not module.check_mode:
@@ -294,7 +298,7 @@ def update_dhcp_opts(connection, module, vpc_obj, dhcp_id):
     if vpc_obj['DhcpOptionsId'] != dhcp_id:
         if not module.check_mode:
             try:
-                connection.associate_dhcp_options(DhcpOptionsId=dhcp_id, VpcId=vpc_obj['VpcId'])
+                connection.associate_dhcp_options(DhcpOptionsId=dhcp_id, VpcId=vpc_obj['VpcId'], aws_retry=True)
             except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                 module.fail_json_aws(e, msg="Failed to associate DhcpOptionsId {0}".format(dhcp_id))
 
@@ -313,15 +317,18 @@ def update_dhcp_opts(connection, module, vpc_obj, dhcp_id):
 def create_vpc(connection, module, cidr_block, tenancy):
     try:
         if not module.check_mode:
-            vpc_obj = connection.create_vpc(CidrBlock=cidr_block, InstanceTenancy=tenancy)
+            vpc_obj = connection.create_vpc(CidrBlock=cidr_block, InstanceTenancy=tenancy, aws_retry=True)
         else:
             module.exit_json(changed=True)
     except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
         module.fail_json_aws(e, "Failed to create the VPC")
 
-    # wait for vpc to exist
+    # wait up to 30 seconds for vpc to exist
     try:
-        connection.get_waiter('vpc_exists').wait(VpcIds=[vpc_obj['Vpc']['VpcId']])
+        connection.get_waiter('vpc_exists').wait(
+            VpcIds=[vpc_obj['Vpc']['VpcId']],
+            WaiterConfig=dict(MaxAttempts=30)
+        )
     except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
         module.fail_json_aws(e, msg="Unable to wait for VPC {0} to be created.".format(vpc_obj['Vpc']['VpcId']))
 
@@ -334,7 +341,8 @@ def wait_for_vpc_attribute(connection, module, vpc_id, attribute, expected_value
     while time() < start_time + 300:
         current_value = connection.describe_vpc_attribute(
             Attribute=attribute,
-            VpcId=vpc_id
+            VpcId=vpc_id,
+            aws_retry=True
         )['{0}{1}'.format(attribute[0].upper(), attribute[1:])]['Value']
         if current_value != expected_value:
             sleep(3)
@@ -366,7 +374,7 @@ def get_cidr_network_bits(module, cidr_block):
 def main():
     argument_spec = dict(
         name=dict(required=True),
-        cidr_block=dict(type='list', required=True),
+        cidr_block=dict(type='list', required=True, elements='str'),
         ipv6_cidr=dict(type='bool', default=False),
         tenancy=dict(choices=['default', 'dedicated'], default='default'),
         dns_support=dict(type='bool', default=True),
@@ -428,7 +436,7 @@ def main():
             for cidr in to_add:
                 changed = True
                 try:
-                    connection.associate_vpc_cidr_block(CidrBlock=cidr, VpcId=vpc_id)
+                    connection.associate_vpc_cidr_block(CidrBlock=cidr, VpcId=vpc_id, aws_retry=True)
                 except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                     module.fail_json_aws(e, "Unable to associate CIDR {0}.".format(ipv6_cidr))
         if ipv6_cidr:
@@ -438,7 +446,7 @@ def main():
                     vpc_obj['Ipv6CidrBlockAssociationSet'][0]['Ipv6CidrBlock']))
             else:
                 try:
-                    connection.associate_vpc_cidr_block(AmazonProvidedIpv6CidrBlock=ipv6_cidr, VpcId=vpc_id)
+                    connection.associate_vpc_cidr_block(AmazonProvidedIpv6CidrBlock=ipv6_cidr, VpcId=vpc_id, aws_retry=True)
                     changed = True
                 except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                     module.fail_json_aws(e, "Unable to associate CIDR {0}.".format(ipv6_cidr))
@@ -447,7 +455,7 @@ def main():
             for association_id in to_remove:
                 changed = True
                 try:
-                    connection.disassociate_vpc_cidr_block(AssociationId=association_id)
+                    connection.disassociate_vpc_cidr_block(AssociationId=association_id, aws_retry=True)
                 except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                     module.fail_json_aws(e, "Unable to disassociate {0}. You must detach or delete all gateways and resources that "
                                          "are associated with the CIDR block before you can disassociate it.".format(association_id))
@@ -472,14 +480,14 @@ def main():
             changed = True
             if not module.check_mode:
                 try:
-                    connection.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={'Value': dns_support})
+                    connection.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={'Value': dns_support}, aws_retry=True)
                 except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                     module.fail_json_aws(e, "Failed to update enabled dns support attribute")
         if current_dns_hostnames != dns_hostnames:
             changed = True
             if not module.check_mode:
                 try:
-                    connection.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={'Value': dns_hostnames})
+                    connection.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={'Value': dns_hostnames}, aws_retry=True)
                 except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                     module.fail_json_aws(e, "Failed to update enabled dns hostnames attribute")
 
@@ -491,7 +499,7 @@ def main():
                     Filters=[{'Name': 'cidr-block-association.cidr-block', 'Values': expected_cidrs}]
                 )
             except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
-                module.fail_json_aws(e, "Failed to wait for CIDRs to update")
+                module.fail_json_aws(e, "Failed to wait for CIDRs to update", vpc_id=vpc_id)
 
         # try to wait for enableDnsSupport and enableDnsHostnames to match
         wait_for_vpc_attribute(connection, module, vpc_id, 'enableDnsSupport', dns_support)
@@ -500,8 +508,9 @@ def main():
         final_state = camel_dict_to_snake_dict(get_vpc(module, connection, vpc_id))
         final_state['tags'] = boto3_tag_list_to_ansible_dict(final_state.get('tags', []))
         final_state['id'] = final_state.pop('vpc_id')
+        debugging = dict(to_add=to_add, to_remove=to_remove, expected_cidrs=expected_cidrs)
 
-        module.exit_json(changed=changed, vpc=final_state)
+        module.exit_json(changed=changed, vpc=final_state, debugging=debugging)
 
     elif state == 'absent':
 
@@ -511,7 +520,7 @@ def main():
         if vpc_id is not None:
             try:
                 if not module.check_mode:
-                    connection.delete_vpc(VpcId=vpc_id)
+                    connection.delete_vpc(VpcId=vpc_id, aws_retry=True)
                 changed = True
             except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
                 module.fail_json_aws(e, msg="Failed to delete VPC {0} You may want to use the ec2_vpc_subnet, ec2_vpc_igw, "

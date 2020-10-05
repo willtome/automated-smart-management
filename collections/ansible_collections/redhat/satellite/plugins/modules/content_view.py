@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: content_view
-short_description: Create and manage content views
+version_added: 1.0.0
+short_description: Manage Content Views
 description:
     - Create and manage content views
 author: "Eric D Helms (@ehelms)"
@@ -103,10 +100,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create or update Fedora content view"
-  content_view:
+  redhat.satellite.content_view:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Fedora CV"
     organization: "My Cool new Organization"
     repositories:
@@ -114,10 +111,10 @@ EXAMPLES = '''
         product: 'Fedora'
 
 - name: "Create a composite content view"
-  content_view:
+  redhat.satellite.content_view:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Fedora CCV"
     organization: "My Cool new Organization"
     composite: true
@@ -129,14 +126,24 @@ EXAMPLES = '''
         latest: true
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    content_views:
+      description: List of content views.
+      type: list
+      elements: dict
+'''
 
 import copy
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule
 
 
 cvc_foreman_spec = {
-    'id': {'type': 'invisible'},
+    'id': {'invisible': True},
     'content_view': {'type': 'entity', 'required': True},
     'latest': {'type': 'bool', 'default': False},
     'content_view_version': {'type': 'entity', 'aliases': ['version']},
@@ -165,6 +172,7 @@ def main():
             state=dict(default='present', choices=['present_with_defaults', 'present', 'absent']),
         ),
         mutually_exclusive=[['repositories', 'components']],
+        entity_opts=dict(thin=False),
     )
 
     # components is None when we're managing a CCV but don't want to adjust its components
@@ -188,6 +196,10 @@ def main():
                         product = module.find_resource_by_name('products', repository['product'], params=scope, thin=True)
                         repositories.append(module.find_resource_by_name('repositories', repository['name'], params={'product_id': product['id']}, thin=True))
                     module.foreman_params['repositories'] = repositories
+
+        if entity and module.desired_absent:
+            for lce in entity.get('environments', []):
+                module.resource_action('content_views', 'remove_from_environment', {'id': entity['id'], 'environment_id': lce['id']})
 
         content_view_entity = module.run()
 

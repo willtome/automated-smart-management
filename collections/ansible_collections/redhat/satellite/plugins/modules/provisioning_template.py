@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: provisioning_template
-short_description: Manage Provisioning Template
+version_added: 1.0.0
+short_description: Manage Provisioning Templates
 description:
-  - "Manage Provisioning Template"
+  - Manage Provisioning Templates
 author:
   - "Bernhard Hopfenmueller (@Fobhep) ATIX AG"
   - "Matthias Dellweg (@mdellweg) ATIX AG"
@@ -43,15 +40,19 @@ options:
       - The provisioning template kind
     required: false
     choices:
+      - Bootdisk
+      - cloud-init
       - finish
       - iPXE
       - job_template
+      - kexec
       - POAP
       - provision
       - ptable
-      - PXELinux
       - PXEGrub
       - PXEGrub2
+      - PXELinux
+      - registration
       - script
       - snippet
       - user_data
@@ -84,25 +85,21 @@ options:
   updated_name:
     description: New provisioning template name. When this parameter is set, the module will not be idempotent.
     type: str
-  operatingsystems:
-    description: The Operatingsystems the template shall be assigned to
-    required: false
-    type: list
-    elements: str
 extends_documentation_fragment:
   - redhat.satellite.foreman
   - redhat.satellite.foreman.entity_state_with_defaults
   - redhat.satellite.foreman.taxonomy
+  - redhat.satellite.foreman.operatingsystems
 '''
 
 EXAMPLES = '''
 
 # Keep in mind, that in this case, the inline parameters will be overwritten
 - name: "Create a Provisioning Template inline"
-  provisioning_template:
+  redhat.satellite.provisioning_template:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: A New Finish Template
     kind: finish
     state: present
@@ -119,10 +116,10 @@ EXAMPLES = '''
       - TARDIS INC
 
 - name: "Create a Provisioning Template from a file"
-  provisioning_template:
+  redhat.satellite.provisioning_template:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     file_name: timeywimey_template.erb
     state: present
     locations:
@@ -133,10 +130,10 @@ EXAMPLES = '''
 # Due to the module logic, deleting requires a template dummy,
 # either inline or from a file.
 - name: "Delete a Provisioning Template"
-  provisioning_template:
+  redhat.satellite.provisioning_template:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: timeywimey_template
     template: |
       <%#
@@ -145,10 +142,10 @@ EXAMPLES = '''
     state: absent
 
 - name: "Create a Provisioning Template from a file and modify with parameter"
-  provisioning_template:
+  redhat.satellite.provisioning_template:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     file_name: timeywimey_template.erb
     name: Wibbly Wobbly Template
     state: present
@@ -160,10 +157,10 @@ EXAMPLES = '''
 # Providing a name in this case wouldn't be very sensible.
 # Alternatively make use of with_filetree to parse recursively with filter.
 - name: "Parsing a directory of provisioning templates"
-  provisioning_template:
+  redhat.satellite.provisioning_template:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     file_name: "{{ item }}"
     state: present
     locations:
@@ -175,10 +172,10 @@ EXAMPLES = '''
 
 # If the templates are stored locally and the ansible module is executed on a remote host
 - name: Ensure latest version of all Provisioning Community Templates
-  provisioning_template:
-    server_url: "https://foreman.example.com"
-    username:  "admin"
-    password:  "changeme"
+  redhat.satellite.provisioning_template:
+    server_url: "https://satellite.example.com"
+    username: "admin"
+    password: "changeme"
     state: present
     template: '{{ lookup("file", item.src) }}'
   with_filetree: '/path/to/provisioning/templates'
@@ -187,20 +184,18 @@ EXAMPLES = '''
 
 # with name set to "*" bulk actions can be performed
 - name: "Delete *ALL* provisioning templates"
-  local_action:
-    module: foreman_provisioning_template
+  redhat.satellite.provisioning_template:
     username: "admin"
-    password: "admin"
-    server_url: "https://foreman.example.com"
+    password: "changeme"
+    server_url: "https://satellite.example.com"
     name: "*"
     state: absent
 
 - name: "Assign all provisioning templates to the same organization(s)"
-  local_action:
-    module: foreman_provisioning_template
+  redhat.satellite.provisioning_template:
     username: "admin"
-    password: "admin"
-    server_url: "https://foreman.example.com"
+    password: "changeme"
+    server_url: "https://satellite.example.com"
     name: "*"
     state: present
     organizations:
@@ -210,7 +205,17 @@ EXAMPLES = '''
 
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    provisioning_templates:
+      description: List of provisioning templates.
+      type: list
+      elements: dict
+'''
 
 
 import os
@@ -248,15 +253,19 @@ def main():
         ),
         foreman_spec=dict(
             kind=dict(choices=[
+                'Bootdisk',
+                'cloud-init',
                 'finish',
                 'iPXE',
                 'job_template',
+                'kexec',
                 'POAP',
                 'provision',
                 'ptable',
-                'PXELinux',
                 'PXEGrub',
                 'PXEGrub2',
+                'PXELinux',
+                'registration',
                 'script',
                 'snippet',
                 'user_data',
@@ -266,7 +275,7 @@ def main():
             locked=dict(type='bool'),
             name=dict(),
             operatingsystems=dict(type='entity_list'),
-            snippet=dict(type='invisible'),
+            snippet=dict(invisible=True),
         ),
         mutually_exclusive=[
             ['file_name', 'template'],

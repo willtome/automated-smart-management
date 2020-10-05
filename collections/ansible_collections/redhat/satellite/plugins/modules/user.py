@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: user
+version_added: 1.0.0
 short_description: Manage Users
 description:
   - Create, update, and delete users
@@ -281,7 +278,7 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: Create a user
-  user:
+  redhat.satellite.user:
     name: test
     firstname: Test
     lastname: Userson
@@ -303,19 +300,29 @@ EXAMPLES = '''
     state: present
 
 - name: Update a user
-  user:
+  redhat.satellite.user:
     name: test
     firstname: Tester
     state: present
 
 - name: Change password
-  user:
+  redhat.satellite.user:
     name: test
     user_password: newp@ss
 
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    users:
+      description: List of users.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
     ForemanTaxonomicEntityAnsibleModule,

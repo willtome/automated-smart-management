@@ -20,16 +20,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: puppet_environment
-short_description: Manage Environment (Puppet)
+version_added: 1.0.0
+short_description: Manage Puppet Environments
 description:
-  - Create, update, and delete Environment
+  - Create, update, and delete Puppet Environments
 author:
   - "Bernhard Suttner (@_sbernhard) ATIX AG"
   - "Christoffer Reijer (@ephracis) Basalt AB"
@@ -46,19 +43,29 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: create new environment
-  puppet_environment:
+  redhat.satellite.puppet_environment:
     name: "testing"
     locations:
       - "Munich"
     organizations:
       - "ACME"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    puppet_environments:
+      description: List of puppet environments.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
     ForemanTaxonomicEntityAnsibleModule,

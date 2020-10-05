@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: domain
+version_added: 1.0.0
 short_description: Manage Domains
 description:
   - Create, update, and delete Domains
@@ -63,25 +60,35 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: domain
-  domain:
+  redhat.satellite.domain:
     name: "example.org"
     description: "Example Domain"
     locations:
       - "Munich"
     organizations:
       - "ACME"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    domains:
+      description: List of domains.
+      type: list
+      elements: dict
+'''
 
-from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanTaxonomicEntityAnsibleModule, NestedParametersMixin
+from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanTaxonomicEntityAnsibleModule, ParametersMixin
 
 
-class ForemanDomainModule(NestedParametersMixin, ForemanTaxonomicEntityAnsibleModule):
+class ForemanDomainModule(ParametersMixin, ForemanTaxonomicEntityAnsibleModule):
     pass
 
 

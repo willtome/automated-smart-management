@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: content_credential
-short_description: Create and manage content credentials
+version_added: 1.0.0
+short_description: Manage Content Credentials
 description:
   - Create and manage content credentials
 author: "Baptiste Agasse (@bagasse)"
@@ -57,17 +54,27 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create katello client GPG key"
-  content_credential:
+  redhat.satellite.content_credential:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "RPM-GPG-KEY-my-repo"
     content_type: gpg_key
     organization: "Default Organization"
     content: "{{ lookup('file', 'RPM-GPG-KEY-my-repo') }}"
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    content_credentials:
+      description: List of content credentials.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule
 

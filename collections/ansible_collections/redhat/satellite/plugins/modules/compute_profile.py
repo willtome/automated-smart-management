@@ -20,13 +20,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: compute_profile
+version_added: 1.0.0
 short_description: Manage Compute Profiles
 description:
   - Create, update, and delete Compute Profiles
@@ -65,15 +62,15 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: compute profile
-  compute_profile:
+  redhat.satellite.compute_profile:
     name: example_compute_profile
-    server_url: "https://foreman.example.com"
-    username: admin
-    password: secret
+    server_url: "https://satellite.example.com"
+    username: "admin"
+    password: "changeme"
     state: present
 
 - name: another compute profile
-  compute_profile:
+  redhat.satellite.compute_profile:
     name: another_example_compute_profile
     compute_attributes:
     - compute_resource: ovirt_compute_resource1
@@ -81,13 +78,13 @@ EXAMPLES = '''
         cluster: 'a96d44a4-f14a-1015-82c6-f80354acdf01'
         template: 'c88af4b7-a24a-453b-9ac2-bc647ca2ef99'
         instance_type: 'cb8927e7-a404-40fb-a6c1-06cbfc92e077'
-    server_url: "https://foreman.example.com"
-    username: admin
-    password: secret
+    server_url: "https://satellite.example.com"
+    username: "admin"
+    password: "changeme"
     state: present
 
 - name: compute profile2
-  compute_profile:
+  redhat.satellite.compute_profile:
     name: example_compute_profile2
     compute_attributes:
     - compute_resource: ovirt_compute_resource01
@@ -125,21 +122,41 @@ EXAMPLES = '''
             capacity: 16G
             allocation: 16G
             format_type: raw
-    server_url: "https://foreman.example.com"
-    username: admin
-    password: secret
+    server_url: "https://satellite.example.com"
+    username: "admin"
+    password: "changeme"
     state: present
 
 - name: Remove compute profile
-  compute_profile:
+  redhat.satellite.compute_profile:
     name: example_compute_profile2
-    server_url: "https://foreman.example.com"
-    username: admin
-    password: secret
+    server_url: "https://satellite.example.com"
+    username: "admin"
+    password: "changeme"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    compute_profiles:
+      description: List of compute profiles.
+      type: list
+      elements: dict
+      contains:
+        id:
+          description: Database id of the compute profile.
+          type: int
+        name:
+          description: Name of the compute profile.
+          type: str
+        compute_attributes:
+          description: Attributes for this compute profile.
+          type: list
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule
 

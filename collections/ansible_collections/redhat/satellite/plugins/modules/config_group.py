@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: config_group
-short_description: Manage (Puppet) config groups
+version_added: 1.0.0
+short_description: Manage (Puppet) Config Groups
 description:
   - Create, update, and delete (Puppet) config groups
 author:
@@ -51,18 +48,28 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: create new config group
-  config_group:
+  redhat.satellite.config_group:
     name: "My config group"
     puppetclasses:
       - ntp
       - mymodule::myclass
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    config_groups:
+      description: List of config groups.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule
 

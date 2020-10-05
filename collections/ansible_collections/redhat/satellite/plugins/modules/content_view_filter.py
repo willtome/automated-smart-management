@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: content_view_filter
-short_description: Create and manage content View filters
+version_added: 1.0.0
+short_description: Manage Content View Filters
 description:
     - Create and manage content View filters
 author: "Sean O'Keeffe (@sean797)"
@@ -146,10 +143,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: Exclude csh
-  content_view_filter:
+  redhat.satellite.content_view_filter:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "package filter 1"
     organization: "Default Organization"
     content_view: Web Servers
@@ -157,10 +154,10 @@ EXAMPLES = '''
     package_name: tcsh
 
 - name: Include newer csh versions
-  content_view_filter:
+  redhat.satellite.content_view_filter:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "package filter 1"
     organization: "Default Organization"
     content_view: Web Servers
@@ -170,9 +167,19 @@ EXAMPLES = '''
     inclusion: True
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    content_view_filters:
+      description: List of content view filters.
+      type: list
+      elements: dict
+'''
 
-from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloAnsibleModule, _foreman_spec_helper
+from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloMixin, ForemanStatelessEntityAnsibleModule
 
 content_filter_spec = {
     'id': {},
@@ -221,7 +228,7 @@ content_filter_rule_docker_spec = {
 }
 
 
-class KatelloContentViewFilterModule(KatelloAnsibleModule):
+class KatelloContentViewFilterModule(KatelloMixin, ForemanStatelessEntityAnsibleModule):
     pass
 
 
@@ -248,16 +255,8 @@ def main():
             version=dict(),
             architecture=dict(),
         ),
+        entity_opts=dict(scope=['content_view']),
     )
-
-    # TODO Maybe refactor this into a EntityMixin
-    module.foreman_spec.update(_foreman_spec_helper(dict(
-        entity=dict(
-            type='entity', flat_name='id', resource_type='content_view_filters', scope=['content_view'],
-            failsafe=True, thin=False, ensure=False,
-        ),
-    ))[0])
-    module.foreman_params['entity'] = module.foreman_params['name']
 
     filter_state = module.foreman_params.pop('filter_state')
     rule_state = module.foreman_params.pop('rule_state')

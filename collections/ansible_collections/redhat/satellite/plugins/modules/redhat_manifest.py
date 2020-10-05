@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: redhat_manifest
+version_added: 1.0.0
 short_description: Interact with a Red Hat Satellite Subscription Manifest
 description:
     - Download and modify a Red Hat Satellite Subscription Manifest
@@ -91,16 +88,16 @@ options:
 '''
 
 EXAMPLES = '''
-- name: Create katello.example.com Manifest and add 7 sub
-  redhat_manifest:
-    name: "katello.example.com"
+- name: Create satellite.example.com Manifest and add 7 sub
+  redhat.satellite.redhat_manifest:
+    name: "satellite.example.com"
     username: "john-smith"
     password: "changeme"
     pool_id: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     quantity: 7
 
 - name: Ensure my manifest has 10 of one subs in it and export
-  redhat_manifest:
+  redhat.satellite.redhat_manifest:
     uuid: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
     username: john-smith
     password: changeme
@@ -108,9 +105,9 @@ EXAMPLES = '''
     quantity: 10
     path: /root/manifest.zip
 
-- name: Remove all of one subs from katello.example.com
-  redhat_manifest:
-    name: katello.example.com
+- name: Remove all of one subs from satellite.example.com
+  redhat.satellite.redhat_manifest:
+    name: satellite.example.com
     username: john-smith
     password: changeme
     pool_id: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX

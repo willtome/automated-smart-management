@@ -19,14 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
-
 DOCUMENTATION = '''
 ---
 module: global_parameter
+version_added: 1.0.0
 short_description: Manage Global Parameters
 description:
   - "Manage Global Parameter Entities"
@@ -72,33 +68,43 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create a Global Parameter"
-  global_parameter:
+  redhat.satellite.global_parameter:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "TheAnswer"
     value: "42"
     state: present_with_defaults
 
 - name: "Update a Global Parameter"
-  global_parameter:
+  redhat.satellite.global_parameter:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "TheAnswer"
     value: "43"
     state: present
 
 - name: "Delete a Global Parameter"
-  global_parameter:
+  redhat.satellite.global_parameter:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "TheAnswer"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    global_parameters:
+      description: List of global parameters.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule, parameter_value_to_str
@@ -123,7 +129,6 @@ def main():
             ['state', 'present_with_defaults', ['value']],
             ['state', 'present', ['value']],
         ),
-        entity_resolve=False,
     )
 
     with module.api_connection():

@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: scap_content
-short_description: Manage SCAP content.
+version_added: 1.0.0
+short_description: Manage SCAP content
 description:
-  - Create, update, and delete SCAP content.
+  - Create, update, and delete SCAP content
 author:
   - "Jameer Pathan (@jameerpathan111)"
 options:
@@ -51,7 +48,7 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: Create SCAP content
-  scap_content:
+  redhat.satellite.scap_content:
     title: "Red Hat firefox default content"
     scap_file: "/home/user/Downloads/ssg-firefox-ds.xml"
     original_filename: "ssg-firefox-ds.xml"
@@ -59,13 +56,13 @@ EXAMPLES = '''
       - "Default Organization"
     locations:
       - "Default Location"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: Update SCAP content
-  scap_content:
+  redhat.satellite.scap_content:
     title: "Red Hat firefox default content"
     updated_title: "Updated scap content title"
     scap_file: "/home/user/Downloads/updated-ssg-firefox-ds.xml"
@@ -76,21 +73,31 @@ EXAMPLES = '''
     locations:
       - "Loc One"
       - "Loc Two"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: Delete SCAP content
-  scap_content:
+  redhat.satellite.scap_content:
     title: "Red Hat firefox default content"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    scap_contents:
+      description: List of scap contents.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanScapDataStreamModule
 

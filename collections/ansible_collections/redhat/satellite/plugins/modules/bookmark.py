@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: bookmark
+version_added: 1.0.0
 short_description: Manage Bookmarks
 description:
   - "Manage Bookmark Entities"
@@ -60,36 +57,68 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create a Bookmark"
-  bookmark:
+  redhat.satellite.bookmark:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "recent"
     controller: "job_invocations"
     query: "started_at > '24 hours ago'"
     state: present_with_defaults
 
 - name: "Update a Bookmark"
-  bookmark:
+  redhat.satellite.bookmark:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "recent"
     controller: "job_invocations"
     query: "started_at > '12 hours ago'"
     state: present
 
 - name: "Delete a Bookmark"
-  bookmark:
+  redhat.satellite.bookmark:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "recent"
     controller: "job_invocations"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    bookmarks:
+      description: List of bookmarks.
+      type: list
+      elements: dict
+      contains:
+        id:
+          description: Database id of the bookmark.
+          type: int
+        name:
+          description: Name of the bookmark.
+          type: str
+        controller:
+          description: Controller, the query is performed on.
+          type: str
+        query:
+          description: Query to be performed on the controller.
+          type: str
+        public:
+          description: Publicity of the bookmark.
+          type: bool
+        owner_type:
+          description: Class of the owner entity.
+          type: str
+        owner_id:
+          description: Database id of the owner entity.
+          type: int
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule
 
@@ -113,7 +142,6 @@ def main():
             ['state', 'present', ['query']],
             ['state', 'present_with_defaults', ['query']],
         ),
-        entity_resolve=False,
     )
 
     with module.api_connection():

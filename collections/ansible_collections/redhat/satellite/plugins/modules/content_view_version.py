@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: content_view_version
-short_description: Create, remove or interact with a Content View Version
+version_added: 1.0.0
+short_description: Manage Content View Versions
 description:
   - Publish, Promote or Remove a Content View Version
 author: Sean O'Keeffe (@sean797)
@@ -77,10 +74,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Ensure content view version 2.0 is in Test & Pre Prod"
-  content_view_version:
+  redhat.satellite.content_view_version:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     content_view: "CV 1"
     organization: "Default Organization"
     version: 2.0
@@ -89,10 +86,10 @@ EXAMPLES = '''
       - Pre Prod
 
 - name: "Ensure content view version in Test is also in Pre Prod"
-  content_view_version:
+  redhat.satellite.content_view_version:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     content_view: "CV 1"
     organization: "Default Organization"
     current_lifecycle_environment: Test
@@ -100,18 +97,18 @@ EXAMPLES = '''
       - Pre Prod
 
 - name: "Publish a content view, not idempotent"
-  content_view_version:
+  redhat.satellite.content_view_version:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     content_view: "CV 1"
     organization: "Default Organization"
 
 - name: "Publish a content view and promote that version to Library & Dev, not idempotent"
-  content_view_version:
+  redhat.satellite.content_view_version:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     content_view: "CV 1"
     organization: "Default Organization"
     lifecycle_environments:
@@ -119,17 +116,27 @@ EXAMPLES = '''
       - Dev
 
 - name: "Ensure content view version 1.0 doesn't exist"
-  content_view_version:
+  redhat.satellite.content_view_version:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     content_view: "Web Servers"
     organization: "Default Organization"
     version: 1.0
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    content_view_versions:
+      description: List of content view versions.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule
@@ -170,7 +177,6 @@ def main():
             current_lifecycle_environment=dict(type='entity', resource_type='lifecycle_environments', scope=['organization']),
         ),
         mutually_exclusive=[['current_lifecycle_environment', 'version']],
-        entity_resolve=False,
     )
 
     module.task_timeout = 60 * 60

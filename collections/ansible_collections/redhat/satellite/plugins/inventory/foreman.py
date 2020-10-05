@@ -2,17 +2,21 @@
 # Copyright (C) 2016 Guido Günther <agx@sigxcpu.org>, Daniel Lobato Garcia <dlobatog@redhat.com>
 # Copyright (c) 2018 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# pylint: disable=raise-missing-from
+# pylint: disable=super-with-arguments
+
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 DOCUMENTATION = '''
     name: foreman
     plugin_type: inventory
-    short_description: foreman inventory source
+    short_description: Foreman inventory source
     requirements:
         - requests >= 1.1
     description:
-        - Get inventory hosts from the Foreman service.
+        - Get inventory hosts from Foreman.
         - Uses a YAML configuration file that ends with ``foreman.(yml|yaml)``.
     extends_documentation_fragment:
         - inventory_cache
@@ -23,24 +27,33 @@ DOCUMENTATION = '''
         required: True
         choices: ['redhat.satellite.foreman']
       url:
-        description: url to foreman
+        description:
+          - URL of the Foreman server.
         default: 'http://localhost:3000'
         env:
             - name: FOREMAN_SERVER
+            - name: FOREMAN_SERVER_URL
+            - name: FOREMAN_URL
       user:
-        description: foreman authentication user
+        description:
+          - Username accessing the Foreman server.
         required: True
         env:
             - name: FOREMAN_USER
+            - name: FOREMAN_USERNAME
       password:
-        description: foreman authentication password
+        description:
+          - Password of the user accessing the Foreman server.
         required: True
         env:
             - name: FOREMAN_PASSWORD
       validate_certs:
-        description: verify SSL certificate if using https
+        description:
+          - Whether or not to verify the TLS certificates of the Foreman server.
         type: boolean
         default: False
+        env:
+            - name: FOREMAN_VALIDATE_CERTS
       group_prefix:
         description: prefix to apply to foreman groups
         default: foreman_
@@ -68,6 +81,10 @@ DOCUMENTATION = '''
       host_filters:
         description: This can be used to restrict the list of returned host
         type: string
+      batch_size:
+        description: Number of hosts per batch that will be retrieved from the Foreman API per individual call
+        type: integer
+        default: 250
 '''
 
 EXAMPLES = '''
@@ -143,7 +160,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
             if params is None:
                 params = {}
             params['page'] = 1
-            params['per_page'] = 250
+            params['per_page'] = self.get_option('batch_size')
             while True:
                 ret = s.get(url, params=params)
                 if ignore_errors and ret.status_code in ignore_errors:
@@ -231,9 +248,16 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
                 # create directly mapped groups
                 group_name = host.get('hostgroup_title', host.get('hostgroup_name'))
                 if group_name:
-                    group_name = to_safe_group_name('%s%s' % (self.get_option('group_prefix'), group_name.lower().replace(" ", "")))
-                    group_name = self.inventory.add_group(group_name)
-                    self.inventory.add_child(group_name, host_name)
+                    parent_name = None
+                    group_label_parts = []
+                    for part in group_name.split('/'):
+                        group_label_parts.append(part.lower().replace(" ", ""))
+                        gname = to_safe_group_name('%s%s' % (self.get_option('group_prefix'), '/'.join(group_label_parts)))
+                        result_gname = self.inventory.add_group(gname)
+                        if parent_name:
+                            self.inventory.add_child(parent_name, result_gname)
+                        parent_name = result_gname
+                    self.inventory.add_child(result_gname, host_name)
 
                 if self.get_option('legacy_hostvars'):
                     hostvars = self._get_hostvars(host)
@@ -261,10 +285,10 @@ class InventoryModule(BaseInventoryPlugin, Cacheable, Constructable):
                     else:
                         for k, v in filtered_params.items():
                             try:
-                                self.inventory.set_variable(host_name, p['name'], p['value'])
+                                self.inventory.set_variable(host_name, k, v)
                             except ValueError as e:
                                 self.display.warning("Could not set hostvar %s to '%s' for the '%s' host, skipping:  %s" %
-                                                     (p['name'], to_native(p['value']), host, to_native(e)))
+                                                     (k, to_native(v), host, to_native(e)))
 
                 # set host vars from facts
                 if self.get_option('want_facts'):

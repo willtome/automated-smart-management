@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: installation_medium
-short_description: Manage Installation Medium
+version_added: 1.0.0
+short_description: Manage Installation Media
 description:
-  - Create, update, and delete Installation Medium
+  - Create, update, and delete Installation Media
 author:
   - "Manuel Bonk(@manuelbonk) ATIX AG"
 options:
@@ -41,11 +38,6 @@ options:
   updated_name:
     description: New full installation medium name. When this parameter is set, the module will not be idempotent.
     type: str
-  operatingsystems:
-    description: List of operating systems the installation medium should be assigned to
-    required: false
-    type: list
-    elements: str
   os_family:
     description:
       - The OS family the template shall be assigned with.
@@ -58,11 +50,12 @@ extends_documentation_fragment:
   - redhat.satellite.foreman.entity_state_with_defaults
   - redhat.satellite.foreman.taxonomy
   - redhat.satellite.foreman.os_family
+  - redhat.satellite.foreman.operatingsystems
 '''
 
 EXAMPLES = '''
 - name: create new debian medium
-  installation_medium:
+  redhat.satellite.installation_medium:
     name: "wheezy"
     locations:
       - "Munich"
@@ -71,13 +64,23 @@ EXAMPLES = '''
     operatingsystems:
       - "Debian"
     path: "http://debian.org/mirror/"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    media:
+      description: List of installation media.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanTaxonomicEntityAnsibleModule, OS_LIST
 

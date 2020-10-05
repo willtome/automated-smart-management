@@ -20,19 +20,16 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: sync_plan
-short_description: Manage sync plans
+version_added: 1.0.0
+short_description: Manage Sync Plans
 description:
-    - Manage sync plans
+  - Manage sync plans
 author:
-    - "Andrew Kofink (@akofink)"
-    - "Matthis Dellweg (@mdellweg) ATIX-AG"
+  - "Andrew Kofink (@akofink)"
+  - "Matthis Dellweg (@mdellweg) ATIX-AG"
 options:
   name:
     description:
@@ -82,10 +79,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create or update weekly RHEL sync plan"
-  sync_plan:
+  redhat.satellite.sync_plan:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Weekly RHEL Sync"
     organization: "Default Organization"
     interval: "weekly"
@@ -96,7 +93,17 @@ EXAMPLES = '''
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    sync_plans:
+      description: List of sync plans.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule

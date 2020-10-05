@@ -19,17 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: host
-short_description: Manage hosts
+version_added: 1.0.0
+short_description: Manage Hosts
 description:
-  - "Manage host Entities"
-  - "This beta version can create and delete hosts from preexisting host groups"
+  - Create, update, and delete Hosts
 author:
   - "Bernhard Hopfenmueller (@Fobhep) ATIX AG"
 options:
@@ -111,54 +107,93 @@ options:
   image:
     description:
       - The image to use when I(provision_method=image).
+      - The I(compute_resource) parameter is required to find the correct image.
     type: str
+    required: false
+  compute_attributes:
+    description:
+      - Additional compute resource specific attributes.
+      - When this parameter is set, the module will not be idempotent.
+    type: dict
     required: false
 extends_documentation_fragment:
   - redhat.satellite.foreman
   - redhat.satellite.foreman.entity_state
   - redhat.satellite.foreman.host_options
   - redhat.satellite.foreman.nested_parameters
+  - redhat.satellite.foreman.operatingsystem
 '''
 
 EXAMPLES = '''
 - name: "Create a host"
-  host:
+  redhat.satellite.host:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "new_host"
     hostgroup: my_hostgroup
     state: present
 
 - name: "Create a host with build context"
-  host:
+  redhat.satellite.host:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "new_host"
     hostgroup: my_hostgroup
     build: true
     state: present
 
 - name: "Create an unmanaged host"
-  host:
+  redhat.satellite.host:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "new_host"
     managed: false
     state: present
 
-- name: "Delete a host"
-  host:
+- name: "Create a VM with 2 CPUs and 4GB RAM"
+  redhat.satellite.host:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
+    name: "new_host"
+    compute_attributes:
+      cpus: 2
+      memory_mb: 4096
+    state: present
+
+- name: "Create a VM and start it after creation"
+  redhat.satellite.host:
+    username: "admin"
+    password: "changeme"
+    server_url: "https://satellite.example.com"
+    name: "new_host"
+    compute_attributes:
+      start: "1"
+    state: present
+
+- name: "Delete a host"
+  redhat.satellite.host:
+    username: "admin"
+    password: "changeme"
+    server_url: "https://satellite.example.com"
     name: "new_host"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    hosts:
+      description: List of hosts.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
     ensure_puppetclasses,
@@ -186,13 +221,17 @@ def main():
             comment=dict(),
             owner=dict(type='entity', resource_type='users', flat_name='owner_id'),
             owner_group=dict(type='entity', resource_type='usergroups', flat_name='owner_id'),
-            owner_type=dict(type='invisible'),
+            owner_type=dict(invisible=True),
             provision_method=dict(choices=['build', 'image', 'bootdisk']),
-            image=dict(type='entity'),
+            image=dict(type='entity', scope=['compute_resource']),
+            compute_attributes=dict(type='dict'),
         ),
         mutually_exclusive=[
             ['owner', 'owner_group']
         ],
+        required_by=dict(
+            image=('compute_resource',),
+        ),
     )
 
     # additional param validation

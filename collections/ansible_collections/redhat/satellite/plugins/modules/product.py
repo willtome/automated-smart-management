@@ -19,19 +19,16 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: product
-short_description: Create and manage products
+version_added: 1.0.0
+short_description: Manage Products
 description:
-    - Create and manage products
+  - Create and manage products
 author:
-    - "Eric D Helms (@ehelms)"
-    - "Matthias Dellweg (@mdellweg) ATIX AG"
+  - "Eric D Helms (@ehelms)"
+  - "Matthias Dellweg (@mdellweg) ATIX AG"
 options:
   name:
     description:
@@ -70,7 +67,7 @@ options:
     type: str
   description:
     description:
-      - Possibly long descriptionto show the user in detail view
+      - Possibly long description to show the user in detail view
     required: false
     type: str
 extends_documentation_fragment:
@@ -81,27 +78,37 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create Fedora product with a sync plan"
-  product:
+  redhat.satellite.product:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Fedora"
     organization: "My Cool new Organization"
     sync_plan: "Fedora repos sync"
     state: present
 
 - name: "Create CentOS 7 product with content credentials"
-  product:
+  redhat.satellite.product:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "CentOS 7"
     gpg_key: "RPM-GPG-KEY-CentOS7"
     organization: "My Cool new Organization"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    products:
+      description: List of products.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule

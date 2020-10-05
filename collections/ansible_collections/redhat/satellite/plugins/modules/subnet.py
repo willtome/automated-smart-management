@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: subnet
+version_added: 1.0.0
 short_description: Manage Subnets
 description:
   - Create, update, and delete Subnets
@@ -71,10 +68,10 @@ options:
     required: true
     type: str
   cidr:
-    description: CIDR prefix length; Required if no mask provided
+    description: CIDR prefix length; Required if I(network_type=IPv4) and no I(mask) provided
     type: int
   mask:
-    description: Subnet netmask. Required if no cidr prefix length provided
+    description: Subnet netmask. Required if I(network_type=IPv4) and no I(cidr) prefix length provided
     type: str
   from_ip:
     description: First IP address of the host IP allocation pool
@@ -99,6 +96,7 @@ options:
       - "Internal DB"
       - "Random DB"
       - "EUI-64"
+      - "External IPAM"
       - "None"
     type: str
   dhcp_proxy:
@@ -134,6 +132,10 @@ options:
     required: false
     type: list
     elements: str
+  externalipam_proxy:
+    description: External IPAM proxy for this subnet
+    required: false
+    type: str
   vlanid:
     description: VLAN ID
     required: false
@@ -154,7 +156,7 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: My subnet
-  subnet:
+  redhat.satellite.subnet:
     name: "My subnet"
     description: "My description"
     network: "192.168.0.0"
@@ -176,17 +178,27 @@ EXAMPLES = '''
     - "Example Org"
     locations:
     - "Toulouse"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    subnets:
+      description: List of subnets.
+      type: list
+      elements: dict
+'''
 
 import traceback
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
-    ForemanTaxonomicEntityAnsibleModule, NestedParametersMixin, missing_required_lib
+    ForemanTaxonomicEntityAnsibleModule, ParametersMixin, missing_required_lib
 )
 try:
     import ipaddress
@@ -196,7 +208,7 @@ except ImportError:
     IPADDRESS_IMP_ERR = traceback.format_exc()
 
 
-class ForemanSubnetModule(NestedParametersMixin, ForemanTaxonomicEntityAnsibleModule):
+class ForemanSubnetModule(ParametersMixin, ForemanTaxonomicEntityAnsibleModule):
     pass
 
 
@@ -219,7 +231,7 @@ def main():
             from_ip=dict(flat_name='from'),
             to_ip=dict(flat_name='to'),
             boot_mode=dict(choices=['DHCP', 'Static'], default='DHCP'),
-            ipam=dict(choices=['DHCP', 'Internal DB', 'Random DB', 'EUI-64', 'None'], default='DHCP'),
+            ipam=dict(choices=['DHCP', 'Internal DB', 'Random DB', 'EUI-64', 'External IPAM', 'None'], default='DHCP'),
             dhcp_proxy=dict(type='entity', flat_name='dhcp_id', resource_type='smart_proxies'),
             httpboot_proxy=dict(type='entity', flat_name='httpboot_id', resource_type='smart_proxies'),
             tftp_proxy=dict(type='entity', flat_name='tftp_id', resource_type='smart_proxies'),
@@ -227,10 +239,10 @@ def main():
             dns_proxy=dict(type='entity', flat_name='dns_id', resource_type='smart_proxies'),
             template_proxy=dict(type='entity', flat_name='template_id', resource_type='smart_proxies'),
             remote_execution_proxies=dict(type='entity_list', resource_type='smart_proxies'),
+            externalipam_proxy=dict(type='entity', flat_name='externalipam_id', resource_type='smart_proxies'),
             vlanid=dict(type='int'),
             mtu=dict(type='int'),
         ),
-        required_one_of=[['cidr', 'mask']],
         required_plugins=[('discovery', ['discovery_proxy'])],
     )
 
@@ -241,6 +253,8 @@ def main():
 
     if not module.desired_absent:
         if module_params['network_type'] == 'IPv4':
+            if 'mask' not in module_params and 'cidr' not in module_params:
+                module.fail_json(msg='When specifying IPv4 networks, either "mask" or "cidr" is required.')
             IPNetwork = ipaddress.IPv4Network
         else:
             IPNetwork = ipaddress.IPv6Network

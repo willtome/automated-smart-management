@@ -365,7 +365,7 @@ ip_permissions:
     - from_port: 8182
       ip_protocol: tcp
       ip_ranges:
-        - cidr_ip: "1.1.1.1/32"
+        - cidr_ip: "198.51.100.1/32"
       ipv6_ranges: []
       prefix_list_ids: []
       to_port: 8182
@@ -1166,8 +1166,8 @@ def main():
         group_id=dict(),
         description=dict(),
         vpc_id=dict(),
-        rules=dict(type='list'),
-        rules_egress=dict(type='list'),
+        rules=dict(type='list', elements='dict'),
+        rules_egress=dict(type='list', elements='dict'),
         state=dict(default='present', type='str', choices=['present', 'absent']),
         purge_rules=dict(default=True, required=False, type='bool'),
         purge_rules_egress=dict(default=True, required=False, type='bool'),

@@ -220,9 +220,9 @@ def list_ec2_snapshots(connection, module):
 def main():
 
     argument_spec = dict(
-        snapshot_ids=dict(default=[], type='list'),
-        owner_ids=dict(default=[], type='list'),
-        restorable_by_user_ids=dict(default=[], type='list'),
+        snapshot_ids=dict(default=[], type='list', elements='str'),
+        owner_ids=dict(default=[], type='list', elements='str'),
+        restorable_by_user_ids=dict(default=[], type='list', elements='str'),
         filters=dict(default={}, type='dict')
     )
 
@@ -230,7 +230,8 @@ def main():
         argument_spec=argument_spec,
         mutually_exclusive=[
             ['snapshot_ids', 'owner_ids', 'restorable_by_user_ids', 'filters']
-        ]
+        ],
+        supports_check_mode=True
     )
     if module._name == 'ec2_snapshot_facts':
         module.deprecate("The 'ec2_snapshot_facts' module has been renamed to 'ec2_snapshot_info'", date='2021-12-01', collection_name='amazon.aws')

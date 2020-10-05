@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: hostgroup
+version_added: 1.0.0
 short_description: Manage Hostgroups
 description:
   - Create, update, and delete Hostgroups
@@ -64,23 +61,24 @@ extends_documentation_fragment:
   - redhat.satellite.foreman.taxonomy
   - redhat.satellite.foreman.nested_parameters
   - redhat.satellite.foreman.host_options
+  - redhat.satellite.foreman.operatingsystem
 '''
 
 EXAMPLES = '''
 - name: "Create a Hostgroup"
-  hostgroup:
+  redhat.satellite.hostgroup:
     name: "new_hostgroup"
     architecture: "architecture_name"
     operatingsystem: "operatingsystem_name"
     medium: "media_name"
     ptable: "Partition_table_name"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: "Update a Hostgroup"
-  hostgroup:
+  redhat.satellite.hostgroup:
     name: "new_hostgroup"
     architecture: "updated_architecture_name"
     operatingsystem: "updated_operatingsystem_name"
@@ -94,18 +92,18 @@ EXAMPLES = '''
     medium: "updated_media_name"
     ptable: "updated_Partition_table_name"
     root_pass: "password"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: "My nested hostgroup"
-  hostgroup:
+  redhat.satellite.hostgroup:
     parent: "new_hostgroup"
     name: "my nested hostgroup"
 
 - name: "My hostgroup with some proxies"
-  hostgroup:
+  redhat.satellite.hostgroup:
     name: "my hostgroup"
     environment: production
     puppet_proxy: puppet-proxy.example.com
@@ -113,7 +111,7 @@ EXAMPLES = '''
     openscap_proxy: openscap-proxy.example.com
 
 - name: "My katello related hostgroup"
-  hostgroup:
+  redhat.satellite.hostgroup:
     organization: "My Org"
     name: "kt hostgroup"
     content_source: capsule.example.com
@@ -124,15 +122,25 @@ EXAMPLES = '''
         value: "my_prod_ak"
 
 - name: "Delete a Hostgroup"
-  hostgroup:
+  redhat.satellite.hostgroup:
     name: "new_hostgroup"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    hostgroups:
+      description: List of hostgroups.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
     ensure_puppetclasses,
@@ -142,7 +150,7 @@ from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper im
 
 
 class ForemanHostgroupModule(HostMixin, ForemanTaxonomicEntityAnsibleModule):
-    pass
+    PARAMETERS_FLAT_NAME = 'group_parameters_attributes'
 
 
 def main():

@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: image
+version_added: 1.0.0
 short_description: Manage Images
 description:
   - Create, update, and delete Images
@@ -55,9 +52,7 @@ options:
     required: false
     type: str
   operatingsystem:
-    description: Operating system that will be deployed using the image
     required: true
-    type: str
   architecture:
     description: architecture of the image
     required: true
@@ -69,6 +64,7 @@ options:
 extends_documentation_fragment:
   - redhat.satellite.foreman
   - redhat.satellite.foreman.entity_state
+  - redhat.satellite.foreman.operatingsystem
 '''
 
 EXAMPLES = '''
@@ -82,7 +78,17 @@ EXAMPLES = '''
         architecture: "x86_64"
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    images:
+      description: List of images.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule
 
@@ -99,16 +105,15 @@ def main():
         ),
         foreman_spec=dict(
             name=dict(required=True),
-            username=dict(type='invisible'),
+            username=dict(invisible=True),
             uuid=dict(required=True, aliases=['image_uuid']),
-            password=dict(type='invisible', no_log=True),
+            password=dict(invisible=True, no_log=True),
             compute_resource=dict(type='entity', required=True),
             architecture=dict(type='entity', required=True),
             operatingsystem=dict(type='entity', required=True),
             user_data=dict(type='bool')
         ),
-        entity_scope=['compute_resource'],
-        entity_resolve=False,
+        entity_opts={'scope': ['compute_resource']},
     )
 
     module.foreman_params['username'] = module.foreman_params.pop('image_username')
@@ -119,7 +124,7 @@ def main():
         operatingsystem_id = module.lookup_entity('operatingsystem')['id']
         module.set_entity('entity', module.find_resource(
             'images',
-            search="name={0},operatingsystem={1}".format(module.foreman_params['name'], operatingsystem_id),
+            search='name="{0}",operatingsystem="{1}"'.format(module.foreman_params['name'], operatingsystem_id),
             params=scope,
             failsafe=True,
         ))

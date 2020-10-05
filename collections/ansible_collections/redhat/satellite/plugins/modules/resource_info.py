@@ -19,17 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
-
 DOCUMENTATION = '''
 ---
 module: resource_info
-short_description: Gather facts about resources
+version_added: 1.0.0
+short_description: Gather information about resources
 description:
-  - "Gather facts about resources"
+  - Gather information about resources
 author:
   - "Sean O'Keeffe (@sean797)"
 options:
@@ -67,10 +63,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Read a Setting"
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     resource: settings
     search: name = foreman_url
   register: result
@@ -78,10 +74,10 @@ EXAMPLES = '''
     var: result.resources[0].value
 
 - name: "Read all Registries"
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     resource: registries
   register: result
 - debug:
@@ -89,10 +85,10 @@ EXAMPLES = '''
   with_items: "{{ result.resources }}"
 
 - name: "Read all Organizations with full details"
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     resource: organizations
     full_details: true
   register: result
@@ -100,10 +96,10 @@ EXAMPLES = '''
     var: result.resources
 
 - name: Get all existing subscriptions for organization with id 1
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     resource: subscriptions
     params:
       organization_id: 1
@@ -112,10 +108,10 @@ EXAMPLES = '''
     var: result
 
 - name: Get all existing activation keys for organization ACME
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     resource: activation_keys
     organization: ACME
   register: result

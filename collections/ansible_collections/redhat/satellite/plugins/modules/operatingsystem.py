@@ -20,16 +20,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: operatingsystem
+version_added: 1.0.0
 short_description: Manage Operating Systems
 description:
-  - "Manage Operating System Entities"
+  - Manage Operating Systems
 author:
   - "Matthias M Dellweg (@mdellweg) ATIX AG"
   - "Bernhard Hopfenmüller (@Fobhep) ATIX AG"
@@ -90,7 +87,7 @@ options:
       - Specify the full list of template names you want to associate with your OS.
       - For example ["Kickstart default", "Kickstart default finish", "Kickstart default iPXE", "custom"].
       - After specifying the template associations, you can set the default association in
-      - the M(foreman_os_default_template) module.
+      - the M(redhat.satellite.os_default_template) module.
     required: false
     type: list
     elements: str
@@ -117,10 +114,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create an Operating System"
-  operatingsystem:
+  redhat.satellite.operatingsystem:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: Debian
     release_name: stretch
     family: Debian
@@ -131,10 +128,10 @@ EXAMPLES = '''
     state: present
 
 - name: "Ensure existence of an Operating System (provide default values)"
-  operatingsystem:
+  redhat.satellite.operatingsystem:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: Centos
     family: Redhat
     major: 7
@@ -142,28 +139,38 @@ EXAMPLES = '''
     state: present_with_defaults
 
 - name: "Delete an Operating System"
-  operatingsystem:
+  redhat.satellite.operatingsystem:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: Debian
     family: Debian
     major: 9
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    operatinsystems:
+      description: List of operatinsystems.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import (
     ForemanEntityAnsibleModule,
-    NestedParametersMixin,
+    ParametersMixin,
     OS_LIST,
 )
 
 
-class ForemanOperatingsystemModule(NestedParametersMixin, ForemanEntityAnsibleModule):
-    pass
+class ForemanOperatingsystemModule(ParametersMixin, ForemanEntityAnsibleModule):
+    PARAMETERS_FLAT_NAME = 'os_parameters_attributes'
 
 
 def main():

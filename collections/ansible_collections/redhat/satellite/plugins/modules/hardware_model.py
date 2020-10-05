@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: hardware_model
-short_description: Manage hardware models
+version_added: 1.0.0
+short_description: Manage Hardware Models
 description:
     - Manage hardware models
 author:
@@ -58,16 +55,26 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create ACME Laptop model"
-  hardware_model:
+  redhat.satellite.hardware_model:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "acme laptop"
     info: "this is the acme laptop"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    hardware_models:
+      description: List of hardware models.
+      type: list
+      elements: dict
+'''
 
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule

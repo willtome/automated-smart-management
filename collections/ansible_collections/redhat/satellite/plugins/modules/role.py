@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: role
+version_added: 1.0.0
 short_description: Manage Roles
 description:
   - Create, update, and delete Roles
@@ -63,7 +60,7 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: role
-  role:
+  redhat.satellite.role:
     name: "Provisioner"
     description: "Only provision on libvirt"
     locations:
@@ -74,13 +71,23 @@ EXAMPLES = '''
       - permissions:
           - view_hosts
         search: "owner_type = Usergroup and owner_id = 4"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    roles:
+      description: List of roles.
+      type: list
+      elements: dict
+'''
 
 import copy
 

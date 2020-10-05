@@ -46,6 +46,7 @@ from ansible.module_utils.common.dict_transformations import snake_dict_to_camel
 from ansible.module_utils.six import binary_type
 from ansible.module_utils.six import string_types
 from ansible.module_utils.six import text_type
+from ansible.module_utils.six import integer_types
 
 from .cloud import CloudRetry
 
@@ -188,12 +189,13 @@ def boto_exception(err):
 def aws_common_argument_spec():
     return dict(
         debug_botocore_endpoint_logs=dict(fallback=(env_fallback, ['ANSIBLE_DEBUG_BOTOCORE_LOGS']), default=False, type='bool'),
-        ec2_url=dict(),
-        aws_secret_key=dict(aliases=['ec2_secret_key', 'secret_key'], no_log=True),
+        ec2_url=dict(aliases=['aws_endpoint_url', 'endpoint_url']),
         aws_access_key=dict(aliases=['ec2_access_key', 'access_key']),
+        aws_secret_key=dict(aliases=['ec2_secret_key', 'secret_key'], no_log=True),
+        security_token=dict(aliases=['access_token', 'aws_security_token'], no_log=True),
         validate_certs=dict(default=True, type='bool'),
-        security_token=dict(aliases=['access_token'], no_log=True),
-        profile=dict(),
+        aws_ca_bundle=dict(type='path'),
+        profile=dict(aliases=['aws_profile']),
         aws_config=dict(type='dict'),
     )
 
@@ -253,7 +255,22 @@ def get_aws_connection_info(module, boto3=False):
     region = get_aws_region(module, boto3)
     profile_name = module.params.get('profile')
     validate_certs = module.params.get('validate_certs')
+    ca_bundle = module.params.get('aws_ca_bundle')
     config = module.params.get('aws_config')
+
+    # Only read the profile environment variables if we've *not* been passed
+    # any credentials as parameters.
+    if not profile_name and not access_key and not secret_key:
+        if os.environ.get('AWS_PROFILE'):
+            profile_name = os.environ.get('AWS_PROFILE')
+        if os.environ.get('AWS_DEFAULT_PROFILE'):
+            profile_name = os.environ.get('AWS_DEFAULT_PROFILE')
+
+    if profile_name and (access_key or secret_key or security_token):
+        module.deprecate("Passing both a profile and access tokens has been deprecated."
+                         "  Only the profile will be used."
+                         "  In later versions of Ansible the options will be mutually exclusive",
+                         date='2022-06-01', collection_name='amazon.aws')
 
     if not ec2_url:
         if 'AWS_URL' in os.environ:
@@ -306,15 +323,23 @@ def get_aws_connection_info(module, boto3=False):
             # in case secret_token came in as empty string
             security_token = None
 
+    if not ca_bundle:
+        if os.environ.get('AWS_CA_BUNDLE'):
+            ca_bundle = os.environ.get('AWS_CA_BUNDLE')
+
     if HAS_BOTO3 and boto3:
         boto_params = dict(aws_access_key_id=access_key,
                            aws_secret_access_key=secret_key,
                            aws_session_token=security_token)
-        boto_params['verify'] = validate_certs
 
         if profile_name:
             boto_params = dict(aws_access_key_id=None, aws_secret_access_key=None, aws_session_token=None)
             boto_params['profile_name'] = profile_name
+
+        if validate_certs and ca_bundle:
+            boto_params['verify'] = ca_bundle
+        else:
+            boto_params['verify'] = validate_certs
 
     else:
         boto_params = dict(aws_access_key_id=access_key,
@@ -378,16 +403,16 @@ def ec2_connect(module):
 
     region, ec2_url, boto_params = get_aws_connection_info(module)
 
-    # If we have a region specified, connect to its endpoint.
-    if region:
-        try:
-            ec2 = connect_to_aws(boto.ec2, region, **boto_params)
-        except (boto.exception.NoAuthHandlerFound, AnsibleAWSError, boto.provider.ProfileNotFoundError) as e:
-            module.fail_json(msg=str(e))
-    # Otherwise, no region so we fallback to the old connection method
-    elif ec2_url:
+    # If ec2_url is present use it
+    if ec2_url:
         try:
             ec2 = boto.connect_ec2_endpoint(ec2_url, **boto_params)
+        except (boto.exception.NoAuthHandlerFound, AnsibleAWSError, boto.provider.ProfileNotFoundError) as e:
+            module.fail_json(msg=str(e))
+    # Otherwise, if we have a region specified, connect to its endpoint.
+    elif region:
+        try:
+            ec2 = connect_to_aws(boto.ec2, region, **boto_params)
         except (boto.exception.NoAuthHandlerFound, AnsibleAWSError, boto.provider.ProfileNotFoundError) as e:
             module.fail_json(msg=str(e))
     else:
@@ -422,7 +447,11 @@ def ansible_dict_to_boto3_filter_list(filters_dict):
     filters_list = []
     for k, v in filters_dict.items():
         filter_dict = {'Name': k}
-        if isinstance(v, string_types):
+        if isinstance(v, bool):
+            filter_dict['Values'] = [str(v).lower()]
+        elif isinstance(v, integer_types):
+            filter_dict['Values'] = [str(v)]
+        elif isinstance(v, string_types):
             filter_dict['Values'] = [v]
         else:
             filter_dict['Values'] = v
@@ -460,7 +489,8 @@ def boto3_tag_list_to_ansible_dict(tags_list, tag_name_key_name=None, tag_value_
     else:
         tag_candidates = {'key': 'value', 'Key': 'Value'}
 
-    if not tags_list:
+    # minio seems to return [{}] as an empty tags_list
+    if not tags_list or not any(tag for tag in tags_list):
         return {}
     for k, v in tag_candidates.items():
         if k in tags_list[0] and v in tags_list[0]:
@@ -641,10 +671,18 @@ def py3cmp(a, b):
         raise
 
 
-def compare_policies(current_policy, new_policy):
+def compare_policies(current_policy, new_policy, default_version="2008-10-17"):
     """ Compares the existing policy and the updated policy
         Returns True if there is a difference between policies.
     """
+    if default_version:
+        if isinstance(current_policy, dict):
+            current_policy = current_policy.copy()
+            current_policy.setdefault("Version", default_version)
+        if isinstance(new_policy, dict):
+            new_policy = new_policy.copy()
+            new_policy.setdefault("Version", default_version)
+
     return set(_hashable_policy(new_policy, [])) != set(_hashable_policy(current_policy, []))
 
 

@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: realm
+version_added: 1.0.0
 short_description: Manage Realms
 description:
   - Manage Realms
@@ -59,17 +56,27 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create EXAMPLE.LOCAL Realm"
-  realm:
+  redhat.satellite.realm:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "EXAMPLE.COM"
-    realm_proxy: "foreman.example.com"
+    realm_proxy: "satellite.example.com"
     realm_type: "Red Hat Identity Management"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    realms:
+      description: List of realms.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanTaxonomicEntityAnsibleModule
 

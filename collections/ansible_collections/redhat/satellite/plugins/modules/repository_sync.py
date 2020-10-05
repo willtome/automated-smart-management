@@ -20,14 +20,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: repository_sync
-short_description: Sync a repository or product
+version_added: 1.0.0
+short_description: Sync a Repository or Product
 description:
   - Sync a repository or product
 author:
@@ -51,10 +48,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Sync repository"
-  repository_sync:
+  redhat.satellite.repository_sync:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     repository: "My repository"
     product: "My Product"
     organization: "Default Organization"

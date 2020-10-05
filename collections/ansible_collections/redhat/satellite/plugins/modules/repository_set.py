@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: repository_set
-short_description: Enable/disable repositories in repository sets
+version_added: 1.0.0
+short_description: Enable/disable Repositories in Repository Sets
 description:
   - Enable/disable repositories in repository sets
 author: "Andrew Kofink (@akofink)"
@@ -50,7 +47,7 @@ options:
     description:
       - Release version and base architecture of the repositories to enable.
       - Some reposotory sets require only I(basearch) or only I(releasever) to be set.
-      - See the examples how you can obtain this information using M(foreman_search_facts).
+      - See the examples how you can obtain this information using M(redhat.satellite.resource_info).
       - Required when I(all_repositories) is unset or C(false).
     required: false
     type: list
@@ -86,10 +83,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Enable RHEL 7 RPMs repositories"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Red Hat Enterprise Linux 7 Server (RPMs)"
     organization: "Default Organization"
     product: "Red Hat Enterprise Linux Server"
@@ -105,10 +102,10 @@ EXAMPLES = '''
     state: enabled
 
 - name: "Enable RHEL 7 RPMs repositories with label"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     label: rhel-7-server-rpms
     repositories:
@@ -123,10 +120,10 @@ EXAMPLES = '''
     state: enabled
 
 - name: "Disable RHEL 7 Extras RPMs repository"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: Red Hat Enterprise Linux 7 Server - Extras (RPMs)
     organization: "Default Organization"
     product: Red Hat Enterprise Linux Server
@@ -135,20 +132,20 @@ EXAMPLES = '''
       - basearch: x86_64
 
 - name: "Enable RHEL 8 BaseOS RPMs repository with label"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     label: rhel-8-for-x86_64-baseos-rpms
     repositories:
       - releasever: "8"
 
 - name: "Enable Red Hat Virtualization Manager RPMs repository with label"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     label: "rhel-7-server-rhv-4.2-manager-rpms"
     repositories:
@@ -156,20 +153,20 @@ EXAMPLES = '''
     state: enabled
 
 - name: "Enable Red Hat Virtualization Manager RPMs repository without specifying basearch"
-  repository_set:
+  redhat.satellite.repository_set:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     label: "rhel-7-server-rhv-4.2-manager-rpms"
     all_repositories: true
     state: enabled
 
 - name: "Search for possible repository sets of a product"
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     resource: repository_sets
     search: product_name="Red Hat Virtualization Manager"
@@ -179,10 +176,10 @@ EXAMPLES = '''
     var: data
 
 - name: "Search for possible repository sets by label"
-  resource_info:
+  redhat.satellite.resource_info:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     resource: repository_sets
     search: label=rhel-7-server-rhv-4.2-manager-rpms
@@ -190,9 +187,36 @@ EXAMPLES = '''
 - name: "Output found repository sets, see the contentUrl section for possible repository substitutions"
   debug:
     var: data
+
+- name: Enable set with and without all_repositories at the same time
+  redhat.satellite.repository_set:
+    username: "admin"
+    password: "changeme"
+    server_url: "https://satellite.example.com"
+    organization: "Default Organization"
+    label: "{{ item.label }}"
+    repositories: "{{ item.repositories | default(omit) }}"
+    all_repositories: "{{ item.repositories is not defined }}"
+    state: enabled
+  loop:
+    - label: rhel-7-server-rpms
+      repositories:
+        - releasever: "7Server"
+          basearch: "x86_64"
+    - label: rhel-7-server-rhv-4.2-manager-rpms
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    repository_sets:
+      description: List of repository sets.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule
 

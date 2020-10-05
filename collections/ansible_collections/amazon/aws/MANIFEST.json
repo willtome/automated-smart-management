@@ -2,7 +2,7 @@
  "collection_info": {
   "namespace": "amazon",
   "name": "aws",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "authors": [
    "Ansible (https://github.com/ansible)"
   ],
@@ -19,7 +19,7 @@
    "ansible.netcommon": ">=0.0.1"
   },
   "repository": "https://github.com/ansible-collections/amazon.aws",
-  "documentation": null,
+  "documentation": "https://github.com/ansible-collections/amazon.aws/tree/main/docs",
   "homepage": "https://github.com/ansible-collections/amazon.aws",
   "issues": "https://github.com/ansible-collections/amazon.aws/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"
  },
@@ -27,7 +27,7 @@
   "name": "FILES.json",
   "ftype": "file",
   "chksum_type": "sha256",
-  "chksum_sha256": "415b9817b1eb2e6fee323e0324c7f9307c512ac5203630e37dcc561016eb4179",
+  "chksum_sha256": "4aff8b415431739ea85e88d60b7e8743d868a17ca061ba7d50af1e188e976d5b",
   "format": 1
  },
  "format": 1

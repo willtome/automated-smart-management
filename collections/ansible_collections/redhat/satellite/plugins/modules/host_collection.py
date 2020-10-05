@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: host_collection
-short_description: Create and Manage host collections
+version_added: 1.0.0
+short_description: Manage Host Collections
 description:
     - Create and Manage host collections
 author:
@@ -55,17 +52,27 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Create Foo host collection"
-  host_collection:
+  redhat.satellite.host_collection:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "Foo"
     description: "Foo host collection for Foo servers"
     organization: "My Cool new Organization"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    host_collections:
+      description: List of host collections.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import KatelloEntityAnsibleModule
 

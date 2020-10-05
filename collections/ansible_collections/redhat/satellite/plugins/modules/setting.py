@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: setting
+version_added: 1.0.0
 short_description: Manage Settings
 description:
-  - "Manage Setting Entities"
+  - Manage Settings
 author:
   - "Matthias M Dellweg (@mdellweg) ATIX AG"
 options:
@@ -49,18 +46,18 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Set a Setting"
-  setting:
+  redhat.satellite.setting:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "http_proxy"
     value: "http://localhost:8088"
 
 - name: "Reset a Setting"
-  setting:
+  redhat.satellite.setting:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "http_proxy"
 '''
 
@@ -72,10 +69,10 @@ foreman_setting:
 '''
 
 
-from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanAnsibleModule, parameter_value_to_str, _foreman_spec_helper
+from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanStatelessEntityAnsibleModule, parameter_value_to_str
 
 
-class ForemanSettingModule(ForemanAnsibleModule):
+class ForemanSettingModule(ForemanStatelessEntityAnsibleModule):
     pass
 
 
@@ -86,12 +83,6 @@ def main():
             value=dict(type='raw'),
         ),
     )
-
-    # TODO Maybe refactor this into a EntityMixin
-    module.foreman_spec.update(_foreman_spec_helper(dict(
-        entity=dict(type='entity', flat_name='id', resource_type='settings', failsafe=False, thin=False, ensure=False),
-    ))[0])
-    module.foreman_params['entity'] = module.foreman_params['name']
 
     with module.api_connection():
         entity = module.lookup_entity('entity')

@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: subscription_manifest
-short_description: Manage manifests
+version_added: 1.0.0
+short_description: Manage Subscription Manifests
 description:
-    - Upload and manage manifests
+  - Upload, refresh and delete Subscription Manifests
 author: "Andrew Kofink (@akofink)"
 options:
   manifest_path:
@@ -57,10 +54,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Upload the RHEL developer edition manifest"
-  subscription_manifest:
+  redhat.satellite.subscription_manifest:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     organization: "Default Organization"
     state: present
     manifest_path: "/tmp/manifest.zip"

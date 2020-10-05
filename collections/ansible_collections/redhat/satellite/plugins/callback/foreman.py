@@ -4,6 +4,8 @@
 # (c) 2017 Ansible Project
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
+# pylint: disable=super-with-arguments
+
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
@@ -12,25 +14,26 @@ DOCUMENTATION = '''
     type: notification
     short_description: Sends events to Foreman
     description:
-      - This callback will report facts and task events to Foreman https://theforeman.org/
-      - Before 2.4, if you wanted to use an ini configuration, the file must be placed in the same directory as this plugin and named foreman.ini
-      - In 2.4 and above you can just put it in the main Ansible configuration file.
-    version_added: "2.2"
+      - This callback will report facts and task events to Foreman
     requirements:
       - whitelisting in configuration
       - requests (python library)
     options:
       url:
-        description: URL to the Foreman server
+        description:
+          - URL of the Foreman server.
         env:
           - name: FOREMAN_URL
+          - name: FOREMAN_SERVER_URL
+          - name: FOREMAN_SERVER
         required: True
         default: http://localhost:3000
         ini:
           - section: callback_foreman
             key: url
       client_cert:
-        description: X509 certificate to authenticate to Foreman if https is used
+        description:
+          - X509 certificate to authenticate to Foreman if https is used
         env:
             - name: FOREMAN_SSL_CERT
         default: /etc/foreman/client_cert.pem
@@ -41,7 +44,8 @@ DOCUMENTATION = '''
             key: client_cert
         aliases: [ ssl_cert ]
       client_key:
-        description: the corresponding private key
+        description:
+          - the corresponding private key
         env:
           - name: FOREMAN_SSL_KEY
         default: /etc/foreman/client_key.pem
@@ -208,6 +212,7 @@ class CallbackModule(CallbackBase):
                     "metrics": metrics,
                     "status": status,
                     "logs": log,
+                    "reporter": "ansible",
                 }
             }
             try:

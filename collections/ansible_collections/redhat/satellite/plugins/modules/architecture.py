@@ -19,13 +19,10 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: architecture
+version_added: 1.0.0
 short_description: Manage Architectures
 description:
   - Create, update, and delete Architectures
@@ -39,49 +36,66 @@ options:
   updated_name:
     description: New architecture name. When this parameter is set, the module will not be idempotent.
     type: str
-  operatingsystems:
-    description: List of operating systems the architecture should be assigned to
-    required: false
-    type: list
-    elements: str
 extends_documentation_fragment:
   - redhat.satellite.foreman
   - redhat.satellite.foreman.entity_state
+  - redhat.satellite.foreman.operatingsystems
 '''
 
 EXAMPLES = '''
 - name: "Create an Architecture"
-  architecture:
+  redhat.satellite.architecture:
     name: "i386"
     operatingsystems:
       - "TestOS1"
       - "TestOS2"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: "Update an Architecture"
-  architecture:
+  redhat.satellite.architecture:
     name: "i386"
     operatingsystems:
       - "TestOS3"
       - "TestOS4"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: present
 
 - name: "Delete an Architecture"
-  architecture:
+  redhat.satellite.architecture:
     name: "i386"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
-    password: "secret"
+    password: "changeme"
     state: absent
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    architectures:
+      description: List of architectures.
+      type: list
+      elements: dict
+      contains:
+        id:
+          description: Database id of the architecture.
+          type: int
+        name:
+          description: Name of the architecture.
+          type: str
+        operatinsystem_ids:
+          description: Database ids of associated operatingsystems.
+          type: list
+          elements: int
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule
 

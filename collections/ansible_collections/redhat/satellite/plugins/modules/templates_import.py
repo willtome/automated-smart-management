@@ -19,14 +19,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.0',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: templates_import
-short_description: Sync templates from a repository
+version_added: 1.0.0
+short_description: Sync Templates from a repository
 description:
   - Sync provisioning templates, report_templates, partition tables and job templates from external git repository or file system.
   - Based on foreman_templates plugin U(https://github.com/theforeman/foreman_templates).
@@ -36,7 +33,7 @@ notes:
   - Due to a bug in the foreman_templates plugin, this module won't report C(changed=true)
     when the only change is the Organization/Location association of the imported templates.
     Please see U(https://projects.theforeman.org/issues/29534) for details.
-  - Default values for all module options can be set using M(foreman_setting) for TemplateSync category or on the settings page in WebUI.
+  - Default values for all module options can be set using M(redhat.satellite.setting) for TemplateSync category or on the settings page in WebUI.
 options:
   prefix:
     description:
@@ -100,16 +97,43 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: Sync templates from git repo
-  templates_import:
+  redhat.satellite.templates_import:
     repo: https://github.com/theforeman/community-templates.git
     branch: 1.24-stable
     associate: new
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     username: "admin"
     password: "changeme"
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+message:
+  description: Information about the import.
+  returned: success
+  type: dict
+  contains:
+    repo:
+      description: Repository, the templates were imported from.
+      type: str
+    branch:
+      description: Branch used in the repository.
+      type: str
+report:
+  description: Report of the import.
+  returned: success
+  type: dict
+  contains:
+    changed:
+      description: List of templates that have been updated.
+      type: list
+    new:
+      description: List of templates that have been created.
+      type: list
+templates:
+  description: Final state of the templates.
+  returned: success
+  type: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanTaxonomicAnsibleModule, _flatten_entity
 

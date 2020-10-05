@@ -20,14 +20,11 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: content_upload
-short_description: Upload content
+version_added: 1.0.0
+short_description: Upload content to a repository
 description:
   - Allows the upload of content to a repository
 author: "Eric D Helms (@ehelms)"
@@ -62,10 +59,10 @@ extends_documentation_fragment:
 
 EXAMPLES = '''
 - name: "Upload my.rpm"
-  content_upload:
+  redhat.satellite.content_upload:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     src: "my.rpm"
     repository: "Build RPMs"
     product: "My Product"

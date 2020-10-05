@@ -19,16 +19,13 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
 DOCUMENTATION = '''
 ---
 module: location
-short_description: Manage Location
+version_added: 1.0.0
+short_description: Manage Locations
 description:
-  - Manage Location
+  - Manage Locations
 author:
   - "Matthias M Dellweg (@mdellweg) ATIX AG"
 options:
@@ -55,10 +52,10 @@ extends_documentation_fragment:
 EXAMPLES = '''
 # Create a simple location
 - name: "Create CI Location"
-  location:
+  redhat.satellite.location:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "My Cool New Location"
     organizations:
       - "Default Organization"
@@ -66,35 +63,45 @@ EXAMPLES = '''
 
 # Create a nested location
 - name: "Create Nested CI Location"
-  location:
+  redhat.satellite.location:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "My Nested location"
     parent: "My Cool New Location"
     state: present
 
 # Create a new nested location with parent included in name
 - name: "Create New Nested Location"
-  location:
+  redhat.satellite.location:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "My Cool New Location/New nested location"
     state: present
 
 # Move a nested location to another parent
 - name: "Create Nested CI Location"
-  location:
+  redhat.satellite.location:
     username: "admin"
     password: "changeme"
-    server_url: "https://foreman.example.com"
+    server_url: "https://satellite.example.com"
     name: "My Cool New Location/New nested location"
     parent: "My Cool New Location/My Nested location"
     state: present
 '''
 
-RETURN = ''' # '''
+RETURN = '''
+entity:
+  description: Final state of the affected entities grouped by their type.
+  returned: success
+  type: dict
+  contains:
+    locations:
+      description: List of locations.
+      type: list
+      elements: dict
+'''
 
 from ansible_collections.redhat.satellite.plugins.module_utils.foreman_helper import ForemanEntityAnsibleModule, NestedParametersMixin
 
