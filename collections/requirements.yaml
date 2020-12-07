@@ -4,3 +4,4 @@ collections:
   - redhat.insights
   - ansible.tower
   - amazon.aws
+  - theforeman.foreman

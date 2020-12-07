@@ -1,5 +1,5 @@
 ---
-plugin: redhat.satellite.foreman
+plugin: theforeman.foreman.foreman
 validate_certs: false
 keyed_groups:
   - prefix: env
