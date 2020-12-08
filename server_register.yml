@@ -37,7 +37,7 @@
   - name: register subscription mangler
     redhat_subscription:
       state: present
-      activationkey: "{{ tags.Group }}"
+      activationkey: "{{ tags.Group | default('RHEL7_dev')}}"
       org_id: "{{ org_id }}"
       auto_attach: yes
 
