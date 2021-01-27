@@ -32,6 +32,7 @@
       name: "https://{{ sat_url }}/pub/katello-ca-consumer-latest.noarch.rpm"
       state: present
       validate_certs: no
+      disable_gpg_check: true
     when: sat_url is defined
 
   - name: register subscription mangler
