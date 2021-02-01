@@ -46,10 +46,10 @@
       state: present
       activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
-      auto_attach: yes
+      #auto_attach: yes
 
   - name: install katello agent
     yum:
-      name: katello_agent
+      name: katello-agent
       state: latest
     when: sat_url is defined
