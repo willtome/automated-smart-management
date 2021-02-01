@@ -49,7 +49,7 @@
     body_format: json
     validate_certs: False
   register: tailoringfiles
-  when: item.tailoring_file_id > 0
+  when: item.tailoring_file_id > 0 | d(False)
   loop: "{{ policy }}"
 
 - name: Build scap content parameters
