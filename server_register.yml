@@ -49,8 +49,7 @@
 
   - block:
     - rhsm_repository:
-      name: rhel-7-server-satellite-tools-6.8-rpms
-      
+        name: rhel-7-server-satellite-tools-6.8-rpms
 
     - name: install katello agent
       yum:
