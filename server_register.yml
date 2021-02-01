@@ -39,7 +39,7 @@
   - name: define activation key
     set_fact:
       activation_key: "{{ 'RHEL' + ansible_distribution_major_version + '_' + env }}"
-    when: activation_key is undefined
+    #when: activation_key is not defined
 
   - name: register subscription mangler
     redhat_subscription:
