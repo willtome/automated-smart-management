@@ -46,7 +46,7 @@
       state: present
       activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
-      pool: 'Red Hat Enterprise Linux Server with Smart Management'
+      pool: 'Red Hat Enterprise Linux Server with Smart Management*'
 
   - name: install katello agent
     yum:
