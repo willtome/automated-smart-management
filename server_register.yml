@@ -46,10 +46,14 @@
       state: present
       activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
-      pool: 'Red Hat Enterprise Linux Server with Smart Management*'
 
-  - name: install katello agent
-    yum:
-      name: katello-agent
-      state: latest
+  - block:
+    - rhsm_repository:
+      name: rhel-7-server-satellite-tools-6.8-rpms
+      
+
+    - name: install katello agent
+      yum:
+        name: katello-agent
+        state: latest
     when: sat_url is defined
