@@ -35,11 +35,16 @@
       validate_certs: no
       disable_gpg_check: true
     when: sat_url is defined
+  
+  - name: define activation key
+    set_fact:
+      activation_key: "{{ 'RHEL' + ansible_distribution_major_version + '_' + env }}"
+    when: activation_key is undefined
 
   - name: register subscription mangler
     redhat_subscription:
       state: present
-      activationkey: "{{ activation_key | default('RHEL' + ansible_distribution_major_version + '_' + env)}}"
+      activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
       auto_attach: yes
 
