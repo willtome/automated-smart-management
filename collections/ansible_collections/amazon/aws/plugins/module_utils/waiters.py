@@ -4,15 +4,38 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import copy
+
 try:
     import botocore.waiter as core_waiter
 except ImportError:
     pass  # caught by HAS_BOTO3
 
+import ansible_collections.amazon.aws.plugins.module_utils.core as aws_core
+
 
 ec2_data = {
     "version": 2,
     "waiters": {
+        "ImageAvailable": {
+            "operation": "DescribeImages",
+            "maxAttempts": 80,
+            "delay": 15,
+            "acceptors": [
+                {
+                    "state": "success",
+                    "matcher": "pathAll",
+                    "argument": "Images[].State",
+                    "expected": "available"
+                },
+                {
+                    "state": "failure",
+                    "matcher": "pathAny",
+                    "argument": "Images[].State",
+                    "expected": "failed"
+                }
+            ]
+        },
         "InternetGatewayExists": {
             "delay": 5,
             "maxAttempts": 40,
@@ -41,6 +64,60 @@ ec2_data = {
                     "matcher": "pathAll",
                     "state": "success",
                     "argument": "NetworkInterfaces[].Attachment.Status"
+                },
+                {
+                    "expected": "InvalidNetworkInterfaceID.NotFound",
+                    "matcher": "error",
+                    "state": "failure"
+                },
+            ]
+        },
+        "NetworkInterfaceAvailable": {
+            "operation": "DescribeNetworkInterfaces",
+            "delay": 5,
+            "maxAttempts": 40,
+            "acceptors": [
+                {
+                    "expected": "available",
+                    "matcher": "pathAll",
+                    "state": "success",
+                    "argument": "NetworkInterfaces[].Status"
+                },
+                {
+                    "expected": "InvalidNetworkInterfaceID.NotFound",
+                    "matcher": "error",
+                    "state": "retry"
+                },
+            ]
+        },
+        "NetworkInterfaceDeleteOnTerminate": {
+            "operation": "DescribeNetworkInterfaces",
+            "delay": 5,
+            "maxAttempts": 10,
+            "acceptors": [
+                {
+                    "expected": True,
+                    "matcher": "pathAll",
+                    "state": "success",
+                    "argument": "NetworkInterfaces[].Attachment.DeleteOnTermination"
+                },
+                {
+                    "expected": "InvalidNetworkInterfaceID.NotFound",
+                    "matcher": "error",
+                    "state": "failure"
+                },
+            ]
+        },
+        "NetworkInterfaceNoDeleteOnTerminate": {
+            "operation": "DescribeNetworkInterfaces",
+            "delay": 5,
+            "maxAttempts": 10,
+            "acceptors": [
+                {
+                    "expected": False,
+                    "matcher": "pathAll",
+                    "state": "success",
+                    "argument": "NetworkInterfaces[].Attachment.DeleteOnTermination"
                 },
                 {
                     "expected": "InvalidNetworkInterfaceID.NotFound",
@@ -295,27 +372,52 @@ rds_data = {
 }
 
 
+def _inject_limit_retries(model):
+
+    extra_retries = [
+        'RequestLimitExceeded', 'Unavailable', 'ServiceUnavailable',
+        'InternalFailure', 'InternalError', 'TooManyRequestsException',
+        'Throttling']
+
+    acceptors = []
+    for error in extra_retries:
+        acceptors.append({"state": "success", "matcher": "error", "expected": error})
+
+    _model = copy.deepcopy(model)
+
+    for waiter in model["waiters"]:
+        _model["waiters"][waiter]["acceptors"].extend(acceptors)
+
+    return _model
+
+
 def ec2_model(name):
-    ec2_models = core_waiter.WaiterModel(waiter_config=ec2_data)
+    ec2_models = core_waiter.WaiterModel(waiter_config=_inject_limit_retries(ec2_data))
     return ec2_models.get_waiter(name)
 
 
 def waf_model(name):
-    waf_models = core_waiter.WaiterModel(waiter_config=waf_data)
+    waf_models = core_waiter.WaiterModel(waiter_config=_inject_limit_retries(waf_data))
     return waf_models.get_waiter(name)
 
 
 def eks_model(name):
-    eks_models = core_waiter.WaiterModel(waiter_config=eks_data)
+    eks_models = core_waiter.WaiterModel(waiter_config=_inject_limit_retries(eks_data))
     return eks_models.get_waiter(name)
 
 
 def rds_model(name):
-    rds_models = core_waiter.WaiterModel(waiter_config=rds_data)
+    rds_models = core_waiter.WaiterModel(waiter_config=_inject_limit_retries(rds_data))
     return rds_models.get_waiter(name)
 
 
 waiters_by_name = {
+    ('EC2', 'image_available'): lambda ec2: core_waiter.Waiter(
+        'image_available',
+        ec2_model('ImageAvailable'),
+        core_waiter.NormalizedOperationMethod(
+            ec2.describe_images
+        )),
     ('EC2', 'internet_gateway_exists'): lambda ec2: core_waiter.Waiter(
         'internet_gateway_exists',
         ec2_model('InternetGatewayExists'),
@@ -325,6 +427,24 @@ waiters_by_name = {
     ('EC2', 'network_interface_attached'): lambda ec2: core_waiter.Waiter(
         'network_interface_attached',
         ec2_model('NetworkInterfaceAttached'),
+        core_waiter.NormalizedOperationMethod(
+            ec2.describe_network_interfaces
+        )),
+    ('EC2', 'network_interface_available'): lambda ec2: core_waiter.Waiter(
+        'network_interface_available',
+        ec2_model('NetworkInterfaceAvailable'),
+        core_waiter.NormalizedOperationMethod(
+            ec2.describe_network_interfaces
+        )),
+    ('EC2', 'network_interface_delete_on_terminate'): lambda ec2: core_waiter.Waiter(
+        'network_interface_delete_on_terminate',
+        ec2_model('NetworkInterfaceDeleteOnTerminate'),
+        core_waiter.NormalizedOperationMethod(
+            ec2.describe_network_interfaces
+        )),
+    ('EC2', 'network_interface_no_delete_on_terminate'): lambda ec2: core_waiter.Waiter(
+        'network_interface_no_delete_on_terminate',
+        ec2_model('NetworkInterfaceNoDeleteOnTerminate'),
         core_waiter.NormalizedOperationMethod(
             ec2.describe_network_interfaces
         )),
@@ -422,6 +542,8 @@ waiters_by_name = {
 
 
 def get_waiter(client, waiter_name):
+    if isinstance(client, aws_core._RetryingBotoClientWrapper):
+        return get_waiter(client.client, waiter_name)
     try:
         return waiters_by_name[(client.__class__.__name__, waiter_name)](client)
     except KeyError:

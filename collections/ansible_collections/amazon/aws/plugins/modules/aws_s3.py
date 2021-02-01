@@ -46,7 +46,7 @@ options:
     type: int
   headers:
     description:
-      - Custom headers for PUT operation, as a dictionary of 'key=value' and 'key=value,key=value'.
+      - Custom headers for PUT operation, as a dictionary of C(key=value) and C(key=value,key=value).
     type: dict
   marker:
     description:
@@ -59,12 +59,12 @@ options:
     type: int
   metadata:
     description:
-      - Metadata for PUT operation, as a dictionary of 'key=value' and 'key=value,key=value'.
+      - Metadata for PUT operation, as a dictionary of C(key=value) and C(key=value,key=value).
     type: dict
   mode:
     description:
-      - Switches the module behaviour between put (upload), get (download), geturl (return download url, Ansible 1.3+),
-        getstr (download object as string (1.3+)), list (list keys, Ansible 2.0+), create (bucket), delete (bucket),
+      - Switches the module behaviour between C(put) (upload), C(get) (download), C(geturl) (return download url, Ansible 1.3+),
+        C(getstr) (download object as string (1.3+)), C(list) (list keys, Ansible 2.0+), C(create) (bucket), C(delete) (bucket),
         and delobj (delete object, Ansible 2.0+).
     required: true
     choices: ['get', 'put', 'delete', 'create', 'geturl', 'getstr', 'delobj', 'list']
@@ -94,10 +94,12 @@ options:
   overwrite:
     description:
       - Force overwrite either locally on the filesystem or remotely with the object/key. Used with PUT and GET operations.
-        Boolean or one of [always, never, different], true is equal to 'always' and false is equal to 'never', new in 2.0.
-        When this is set to 'different', the md5 sum of the local file is compared with the 'ETag' of the object/key in S3.
+      - Must be a Boolean, C(always), C(never) or C(different).
+      - C(true) is the same as C(always).
+      - C(false) is equal to C(never).
+      - When this is set to C(different) the MD5 sum of the local file is compared with the 'ETag' of the object/key in S3.
         The ETag may or may not be an MD5 digest of the object data. See the ETag response header here
-        U(https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html)
+        U(https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html).
     default: 'always'
     aliases: ['force']
     type: str
@@ -126,6 +128,22 @@ options:
   src:
     description:
       - The source file path when performing a PUT operation.
+      - Either I(content), I(content_base64) or I(src) must be specified for a PUT operation. Ignored otherwise.
+    type: path
+  content:
+    description:
+      - The content to PUT into an object.
+      - The parameter value will be treated as a string and converted to UTF-8 before sending it to S3.
+        To send binary data, use the I(content_base64) parameter instead.
+      - Either I(content), I(content_base64) or I(src) must be specified for a PUT operation. Ignored otherwise.
+    version_added: "1.3.0"
+    type: str
+  content_base64:
+    description:
+      - The base64-encoded binary data to PUT into an object.
+      - Use this if you need to put raw binary data, and don't forget to encode in base64.
+      - Either I(content), I(content_base64) or I(src) must be specified for a PUT operation. Ignored otherwise.
+    version_added: "1.3.0"
     type: str
   ignore_nonexistent_bucket:
     description:
@@ -133,9 +151,10 @@ options:
         GetObject permission but no other permissions. In this case using the option mode: get will fail without specifying
         I(ignore_nonexistent_bucket=true)."
     type: bool
+    default: false
   encryption_kms_key_id:
     description:
-      - KMS key id to use when encrypting objects using I(encrypting=aws:kms). Ignored if I(encryption) is not C(aws:kms)
+      - KMS key id to use when encrypting objects using I(encrypting=aws:kms). Ignored if I(encryption) is not C(aws:kms).
     type: str
 requirements: [ "boto3", "botocore" ]
 author:
@@ -153,6 +172,13 @@ EXAMPLES = '''
     bucket: mybucket
     object: /my/desired/key.txt
     src: /usr/local/myfile.txt
+    mode: put
+
+- name: PUT operation from a rendered template
+  aws_s3:
+    bucket: mybucket
+    object: /object.yaml
+    content: "{{ lookup('template', 'templates/object.yaml.j2') }}"
     mode: put
 
 - name: Simple PUT operation in Ceph RGW S3
@@ -275,7 +301,9 @@ s3_keys:
 
 import mimetypes
 import os
+import io
 from ssl import SSLError
+import base64
 
 try:
     import botocore
@@ -294,6 +322,7 @@ from ..module_utils.ec2 import boto3_conn
 from ..module_utils.ec2 import get_aws_connection_info
 from ..module_utils.s3 import HAS_MD5
 from ..module_utils.s3 import calculate_etag
+from ..module_utils.s3 import calculate_etag_content
 
 IGNORE_S3_DROP_IN_EXCEPTIONS = ['XNotImplemented', 'NotImplemented']
 
@@ -319,9 +348,12 @@ def key_check(module, s3, bucket, obj, version=None, validate=True):
     return True
 
 
-def etag_compare(module, local_file, s3, bucket, obj, version=None):
+def etag_compare(module, s3, bucket, obj, version=None, local_file=None, content=None):
     s3_etag = get_etag(s3, bucket, obj, version=version)
-    local_etag = calculate_etag(module, local_file, s3_etag, s3, bucket, obj, version)
+    if local_file is not None:
+        local_etag = calculate_etag(module, local_file, s3_etag, s3, bucket, obj, version)
+    else:
+        local_etag = calculate_etag_content(module, content, s3_etag, s3, bucket, obj, version)
 
     return s3_etag == local_etag
 
@@ -479,7 +511,7 @@ def option_in_extra_args(option):
         return allowed_extra_args[temp_option]
 
 
-def upload_s3file(module, s3, bucket, obj, src, expiry, metadata, encrypt, headers):
+def upload_s3file(module, s3, bucket, obj, expiry, metadata, encrypt, headers, src=None, content=None):
     if module.check_mode:
         module.exit_json(msg="PUT operation skipped - running in check mode", changed=True)
     try:
@@ -500,13 +532,19 @@ def upload_s3file(module, s3, bucket, obj, src, expiry, metadata, encrypt, heade
                     extra['Metadata'][option] = metadata[option]
 
         if 'ContentType' not in extra:
-            content_type = mimetypes.guess_type(src)[0]
+            content_type = None
+            if src is not None:
+                content_type = mimetypes.guess_type(src)[0]
             if content_type is None:
                 # s3 default content type
                 content_type = 'binary/octet-stream'
             extra['ContentType'] = content_type
 
-        s3.upload_file(Filename=src, Bucket=bucket, Key=obj, ExtraArgs=extra)
+        if src is not None:
+            s3.upload_file(Filename=src, Bucket=bucket, Key=obj, ExtraArgs=extra)
+        else:
+            f = io.BytesIO(content)
+            s3.upload_fileobj(Fileobj=f, Bucket=bucket, Key=obj, ExtraArgs=extra)
     except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
         module.fail_json_aws(e, msg="Unable to complete PUT operation.")
     try:
@@ -652,17 +690,20 @@ def main():
         s3_url=dict(aliases=['S3_URL']),
         dualstack=dict(default='no', type='bool'),
         rgw=dict(default='no', type='bool'),
-        src=dict(),
+        src=dict(type='path'),
+        content=dict(),
+        content_base64=dict(),
         ignore_nonexistent_bucket=dict(default=False, type='bool'),
         encryption_kms_key_id=dict()
     )
     module = AnsibleAWSModule(
         argument_spec=argument_spec,
         supports_check_mode=True,
-        required_if=[['mode', 'put', ['src', 'object']],
+        required_if=[['mode', 'put', ['object']],
                      ['mode', 'get', ['dest', 'object']],
                      ['mode', 'getstr', ['object']],
                      ['mode', 'geturl', ['object']]],
+        mutually_exclusive=[['content', 'content_base64', 'src']],
     )
 
     bucket = module.params.get('bucket')
@@ -683,6 +724,8 @@ def main():
     dualstack = module.params.get('dualstack')
     rgw = module.params.get('rgw')
     src = module.params.get('src')
+    content = module.params.get('content')
+    content_base64 = module.params.get('content_base64')
     ignore_nonexistent_bucket = module.params.get('ignore_nonexistent_bucket')
 
     object_canned_acl = ["private", "public-read", "public-read-write", "aws-exec-read", "authenticated-read", "bucket-owner-read", "bucket-owner-full-control"]
@@ -762,10 +805,10 @@ def main():
             else:
                 module.fail_json(msg="Key %s does not exist." % obj)
 
-        if path_check(dest) and overwrite != 'always':
+        if dest and path_check(dest) and overwrite != 'always':
             if overwrite == 'never':
                 module.exit_json(msg="Local object already exists and overwrite is disabled.", changed=False)
-            if etag_compare(module, dest, s3, bucket, obj, version=version):
+            if etag_compare(module, s3, bucket, obj, version=version, local_file=dest):
                 module.exit_json(msg="Local and remote object are identical, ignoring. Use overwrite=always parameter to force.", changed=False)
 
         try:
@@ -779,8 +822,10 @@ def main():
         # if putting an object in a bucket yet to be created, acls for the bucket and/or the object may be specified
         # these were separated into the variables bucket_acl and object_acl above
 
-        if not path_check(src):
-            module.fail_json(msg="Local object for PUT does not exist")
+        if content is None and content_base64 is None and src is None:
+            module.fail_json('Either content, content_base64 or src must be specified for PUT operations')
+        if src is not None and not path_check(src):
+            module.fail_json('Local object "%s" does not exist for PUT operation' % (src))
 
         if bucketrtn:
             keyrtn = key_check(module, s3, bucket, obj, version=version, validate=validate)
@@ -790,14 +835,21 @@ def main():
             module.params['permission'] = bucket_acl
             create_bucket(module, s3, bucket, location)
 
+        # the content will be uploaded as a byte string, so we must encode it first
+        bincontent = None
+        if content is not None:
+            bincontent = content.encode('utf-8')
+        if content_base64 is not None:
+            bincontent = base64.standard_b64decode(content_base64)
+
         if keyrtn and overwrite != 'always':
-            if overwrite == 'never' or etag_compare(module, src, s3, bucket, obj):
+            if overwrite == 'never' or etag_compare(module, s3, bucket, obj, version=version, local_file=src, content=bincontent):
                 # Return the download URL for the existing object
                 get_download_url(module, s3, bucket, obj, expiry, changed=False)
 
         # only use valid object acls for the upload_s3file function
         module.params['permission'] = object_acl
-        upload_s3file(module, s3, bucket, obj, src, expiry, metadata, encrypt, headers)
+        upload_s3file(module, s3, bucket, obj, expiry, metadata, encrypt, headers, src=src, content=bincontent)
 
     # Delete an object from a bucket, not the entire bucket
     if mode == 'delobj':

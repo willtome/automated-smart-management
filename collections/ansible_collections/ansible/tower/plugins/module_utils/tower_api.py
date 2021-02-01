@@ -13,7 +13,7 @@ from json import loads, dumps
 class TowerAPIModule(TowerModule):
     # TODO: Move the collection version check into tower_module.py
     # This gets set by the make process so whatever is in here is irrelevant
-    _COLLECTION_VERSION = "3.8.0"
+    _COLLECTION_VERSION = "3.8.1"
     _COLLECTION_TYPE = "tower"
     # This maps the collections type (awx/tower) to the values returned by the API
     # Those values can be found in awx/api/generics.py line 204

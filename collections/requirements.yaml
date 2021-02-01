@@ -4,4 +4,4 @@ collections:
   - redhat.insights
   - ansible.tower
   - amazon.aws
-  - theforeman.foreman
+  #https://github.com/theforeman/foreman-ansible-modules

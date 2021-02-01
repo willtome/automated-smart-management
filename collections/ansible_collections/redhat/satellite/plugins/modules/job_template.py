@@ -66,7 +66,6 @@ options:
   snippet:
     description:
       - Determines whether the template shall be a snippet
-    default: false
     type: bool
   template:
     description:
@@ -82,7 +81,6 @@ options:
       advanced:
         description:
           - Template Input is advanced
-        default: false
         type: bool
       description:
         description:
@@ -90,7 +88,8 @@ options:
         type: str
       fact_name:
         description:
-          - Fact name, used when input type is fact
+          - Fact name to use.
+          - Required when I(input_type=fact).
         type: str
       input_type:
         description:
@@ -114,11 +113,13 @@ options:
         elements: raw
       puppet_class_name:
         description:
-          - Puppet class name, used when input type is puppet_parameter
+          - Puppet class name.
+          - Required when I(input_type=puppet_parameter).
         type: str
       puppet_parameter_name:
         description:
-          - Puppet parameter name, used when input type is puppet_parameter
+          - Puppet parameter name.
+          - Required when I(input_type=puppet_parameter).
         type: str
       required:
         description:
@@ -126,7 +127,8 @@ options:
         type: bool
       variable_name:
         description:
-          - Variable name, used when input type is variable
+          - Variable name to use.
+          - Required when I(input_type=variable).
         type: str
       value_type:
         description:
@@ -300,6 +302,7 @@ template_defaults = {
 
 
 template_input_foreman_spec = {
+    'id': dict(invisible=True),
     'name': dict(required=True),
     'description': dict(),
     'required': dict(type='bool'),
@@ -338,7 +341,15 @@ def main():
             provider_type=dict(),
             snippet=dict(type='bool'),
             template=dict(),
-            template_inputs=dict(type='nested_list', foreman_spec=template_input_foreman_spec),
+            template_inputs=dict(
+                type='nested_list',
+                foreman_spec=template_input_foreman_spec,
+                required_if=(
+                    ['input_type', 'fact', ('fact_name',)],
+                    ['input_type', 'variable', ('variable_name',)],
+                    ['input_type', 'puppet_parameter', ('puppet_class_name', 'puppet_parameter_name')],
+                ),
+            ),
         ),
         argument_spec=dict(
             audit_comment=dict(),
@@ -433,8 +444,6 @@ def main():
                 current_template_input_list = module.list_resource('template_inputs', params=scope) if entity else []
                 current_template_inputs = {item['name']: item for item in current_template_input_list}
                 for template_input_dict in template_inputs:
-                    template_input_dict = {key: value for key, value in template_input_dict.items() if value is not None}
-
                     template_input_entity = current_template_inputs.pop(template_input_dict['name'], None)
 
                     module.ensure_entity(

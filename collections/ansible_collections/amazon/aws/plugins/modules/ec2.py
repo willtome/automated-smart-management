@@ -111,7 +111,7 @@ options:
     type: int
   monitoring:
     description:
-      - Enable detailed monitoring (CloudWatch) for instance.
+      - Enable detailed monitoring (CloudWatch) for the instance.
     type: bool
     default: false
   user_data:
@@ -120,7 +120,10 @@ options:
     type: str
   instance_tags:
     description:
-      - A hash/dictionary of tags to add to the new instance or for starting/stopping instance by tag; '{"key":"value"}' and '{"key":"value","key":"value"}'.
+      - >
+        A hash/dictionary of tags to add to the new instance or for
+        instances to start/stop by tag.  For example C({"key":"value"}) or
+        C({"key":"value","key2":"value2"}).
     type: dict
   placement_group:
     description:
@@ -128,7 +131,7 @@ options:
     type: str
   vpc_subnet_id:
     description:
-      - the subnet ID in which to launch the instance (VPC).
+      - The subnet ID in which to launch the instance (VPC).
     type: str
   assign_public_ip:
     description:
@@ -156,8 +159,8 @@ options:
   termination_protection:
     description:
       - Enable or Disable the Termination Protection.
+      - Defaults to C(false).
     type: bool
-    default: false
   instance_initiated_shutdown_behavior:
     description:
     - Set whether AWS will Stop or Terminate an instance on shutdown. This parameter is ignored when using instance-store.
@@ -233,7 +236,7 @@ options:
     description:
       - Used with I(exact_count) to determine how many nodes based on a specific tag criteria should be running.
         This can be expressed in multiple ways and is shown in the EXAMPLES section.  For instance, one can request 25 servers
-        that are tagged with "class=webserver". The specified tag must already exist or be passed in as the I(instance_tags) option.
+        that are tagged with C(class=webserver). The specified tag must already exist or be passed in as the I(instance_tags) option.
     type: raw
   network_interfaces:
     description:
@@ -810,7 +813,7 @@ def create_block_device(module, ec2, volume):
         if 'iops' in volume:
             snapshot = ec2.get_all_snapshots(snapshot_ids=[volume['snapshot']])[0]
             size = volume.get('volume_size', snapshot.volume_size)
-            if int(volume['iops']) > MAX_IOPS_TO_SIZE_RATIO * size:
+            if int(volume['iops']) > MAX_IOPS_TO_SIZE_RATIO * int(size):
                 module.fail_json(msg='IOPS must be at most %d times greater than size' % MAX_IOPS_TO_SIZE_RATIO)
     if 'ephemeral' in volume:
         if 'snapshot' in volume:
@@ -1412,6 +1415,8 @@ def startstop_instances(module, ec2, instance_ids, state, instance_tags):
     if instance_tags:
         for key, value in instance_tags.items():
             filters["tag:" + key] = value
+
+    filters['instance-state-name'] = ["!terminated", "!shutting-down"]
 
     if module.params.get('id'):
         filters['client-token'] = module.params['id']

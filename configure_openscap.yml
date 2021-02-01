@@ -1,0 +1,7 @@
+---
+- hosts: "{{ HOSTS }}"
+  become: yes
+  vars:
+    policy_name: all
+  roles:
+    - ansible-role-scap-client

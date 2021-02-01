@@ -39,20 +39,9 @@
   - name: define activation key
     set_fact:
       activation_key: "{{ 'RHEL' + ansible_distribution_major_version + '_' + env }}"
-    #when: activation_key is not defined
 
   - name: register subscription mangler
     redhat_subscription:
       state: present
       activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
-
-  - block:
-    - rhsm_repository:
-        name: rhel-7-server-satellite-tools-6.8-rpms
-
-    - name: install katello agent
-      yum:
-        name: katello-agent
-        state: latest
-    when: sat_url is defined

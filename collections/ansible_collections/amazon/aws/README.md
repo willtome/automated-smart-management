@@ -4,6 +4,8 @@
 
 The Ansible Amazon AWS collection includes a variety of Ansible content to help automate the management of AWS instances. This collection is maintained by the Ansible cloud team.
 
+AWS related modules and plugins supported by the Ansible community are in the [community.aws](https://github.com/ansible-collections/community.aws/) collection.
+
 <!--start requires_ansible-->
 ## Ansible version compatibility
 
@@ -21,6 +23,12 @@ This collection depends on the AWS SDK for Python (Boto3 and Botocore). As AWS h
 ## Included content
 
 <!--start collection content-->
+### Inventory plugins
+Name | Description
+--- | ---
+[amazon.aws.aws_ec2](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.aws_ec2_inventory.rst)|EC2 inventory source
+[amazon.aws.aws_rds](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.aws_rds_inventory.rst)|rds instance source
+
 ### Lookup plugins
 Name | Description
 --- | ---
@@ -61,12 +69,6 @@ Name | Description
 [amazon.aws.ec2_vpc_subnet_info](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.ec2_vpc_subnet_info_module.rst)|Gather information about ec2 VPC subnets in AWS
 [amazon.aws.s3_bucket](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.s3_bucket_module.rst)|Manage S3 buckets in AWS, DigitalOcean, Ceph, Walrus, FakeS3 and StorageGRID
 
-### Inventory plugins
-Name | Description
---- | ---
-[amazon.aws.aws_ec2](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.aws_ec2_inventory.rst)|EC2 inventory source
-[amazon.aws.aws_rds](https://github.com/ansible-collections/amazon.aws/blob/main/docs/amazon.aws.aws_rds_inventory.rst)|rds instance source
-
 <!--end collection content-->
 
 ## Installing this collection
@@ -82,6 +84,16 @@ You can also include it in a `requirements.yml` file and install it with `ansibl
 collections:
   - name: amazon.aws
 ```
+
+The python module dependencies are not installed by `ansible-galaxy`.  They can
+be manually installed using pip:
+
+    pip install requirements.txt
+
+or:
+
+    pip install boto boto3 botocore
+
 ## Using this collection
 
 
@@ -119,8 +131,12 @@ You can also join us on:
 
 - Freenode IRC - ``#ansible-aws`` Freenode channel
 
-See the [Ansible Community Guide](https://docs.ansible.com/ansible/latest/community/index.html) for details on contributing to Ansible.
+### More information about contributing
 
+- [Ansible Community Guide](https://docs.ansible.com/ansible/latest/community/index.html) - Details on contributing to Ansible
+- [Contributing to Collections](https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html#contributing-to-collections) - How to check out collection git repositories correctly
+- [Guidelines for Ansible Amazon AWS module development](https://docs.ansible.com/ansible/latest/dev_guide/platforms/aws_guidelines.html)
+- [Getting Started With AWS Ansible Module Development and Community Contribution](https://www.ansible.com/blog/getting-started-with-aws-ansible-module-development)
 
 ## Release notes
 <!--Add a link to a changelog.rst file or an external docsite to cover this information. -->
