@@ -46,7 +46,7 @@
       state: present
       activationkey: "{{ activation_key }}"
       org_id: "{{ org_id | default('Default_Organization')}}"
-      #auto_attach: yes
+      pool: '^(Red Hat Enterprise Server)$'
 
   - name: install katello agent
     yum:
