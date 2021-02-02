@@ -1,0 +1,47 @@
+---
+- name: set hostname
+    hostname:
+      name: "{{ inventory_hostname | regex_replace('_','-')}}"
+
+- name: remove rhui client packages
+  yum:
+    name: rh-amazon-rhui-client*
+    state: removed
+
+- name: get current repos
+  command:
+    cmd: ls /etc/yum.repos.d/
+  register: repos
+  changed_when: False
+
+- name: remove existing rhui repos
+  file:
+    path: "/etc/yum.repos.d/{{ item }}"
+    state: absent
+  loop: "{{ repos.stdout_lines }}"
+
+- name: install katello package
+  yum:
+    name: "https://{{ sat_url }}/pub/katello-ca-consumer-latest.noarch.rpm"
+    state: present
+    validate_certs: no
+    disable_gpg_check: true
+  when: sat_url is defined
+
+- name: define activation key
+  set_fact:
+    activation_key: "{{ 'RHEL' + ansible_distribution_major_version + '_' + env }}"
+
+- name: register subscription mangler
+  redhat_subscription:
+    state: present
+    activationkey: "{{ activation_key }}"
+    org_id: "{{ org_id | default('Default_Organization')}}"
+
+- name: include repos
+  include_vars: vars/"{{ ansible_distribution + ansible_distribution_major_version }}"
+
+- name: enable repos
+  rhsm_repository:
+    name: "{{ rhsm_enabled_repos }}"
+    state: enabled
