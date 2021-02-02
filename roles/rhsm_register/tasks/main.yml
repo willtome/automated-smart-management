@@ -39,7 +39,7 @@
     org_id: "{{ org_id | default('Default_Organization')}}"
 
 - name: include repos
-  include_vars: vars/"{{ ansible_distribution + ansible_distribution_major_version }}"
+  include_vars: "{{ ansible_distribution + ansible_distribution_major_version }}".yml
 
 - name: enable repos
   rhsm_repository:
