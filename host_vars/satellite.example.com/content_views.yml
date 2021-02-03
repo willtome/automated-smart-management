@@ -4,6 +4,10 @@ foreman_content_views:
   - name: RHEL7
     content_view: RHEL7
     content_view_update: true
+    lifecycle_environments:
+      - "RHEL7_Dev"
+      - "RHEL7_QA"
+      - "RHEL7_Prod"
     repos:
     - name: Red Hat Enterprise Linux 7 Server (RPMs)
       basearch: x86_64
@@ -18,6 +22,10 @@ foreman_content_views:
   - name: RHEL8
     content_view: RHEL8
     content_view_update: true
+    lifecycle_environments:
+      - "RHEL8_Dev"
+      - "RHEL8_QA"
+      - "RHEL8_Prod"
     repos:
     - name: Red Hat Enterprise Linux 8 for x86_64 - BaseOS (RPMs)
       releasever: 8

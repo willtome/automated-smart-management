@@ -14,6 +14,7 @@
     content_view: "{{ item.content_view }}"
     organization: "{{ organization }}"
     version: "{{ item.content_view_update | d(false) | ternary(omit, 1.0) }}"
-    lifecycle_environments: "{{ lifecycle_environments | map(attribute='name') | list }}"
-  with_items: "{{ foreman_content_views }}"
-  when: lifecycle_environments is defined
+    lifecycle_environments: "{{ item.lifecycle_environments }}"
+  loop: "{{ foreman_content_views }}"
+  when:
+   - item.lifecycle_environments is defined
