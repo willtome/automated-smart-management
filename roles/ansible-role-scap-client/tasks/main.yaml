@@ -8,14 +8,15 @@
 
 - name: Get Policy parameters
   uri:
-    url: https://{{sat_server}}/api/v2/compliance/policies
+    url: https://{{ foreman_server_url }}/api/v2/compliance/policies
     method: GET
-    user: "{{sat_user}}"
-    password:  "{{sat_pass}}"
+    user: "{{ foreman_username }}"
+    password:  "{{ foreman_password }}"
     force_basic_auth: yes
     body_format: json
     validate_certs: False
   register: policies
+  no_log: "{{ foreman_operations_scap_client_secure_logging }}"
 
 - name: Build policy {{ policy_name }} parameters
   set_fact:
@@ -29,28 +30,30 @@
 
 - name: Get scap content information
   uri:
-    url: https://{{sat_server}}/api/v2/compliance/scap_contents/{{item.scap_content_id}}
+    url: https://{{ foreman_server_url }}/api/v2/compliance/scap_contents/{{item.scap_content_id}}
     method: GET
-    user: "{{sat_user}}"
-    password: "{{sat_pass}}"
+    user: "{{ foreman_username }}"
+    password: "{{ foreman_password }}"
     force_basic_auth: yes
     body_format: json
     validate_certs: False
   register: scapcontents
   loop: "{{ policy }}"
+  no_log: "{{ foreman_operations_scap_client_secure_logging }}"
 
 - name: Get tailoring content information
   uri:
-    url: https://{{sat_server}}/api/v2/compliance/tailoring_files/{{item.tailoring_file_id}}
+    url: https://{{ foreman_server_url }}/api/v2/compliance/tailoring_files/{{item.tailoring_file_id}}
     method: GET
-    user: "{{sat_user}}"
-    password: "{{sat_pass}}"
+    user: "{{ foreman_username }}"
+    password: "{{ foreman_password }}"
     force_basic_auth: yes
     body_format: json
     validate_certs: False
   register: tailoringfiles
   when: item.tailoring_file_id | int > 0 | d(False)
   loop: "{{ policy }}"
+  no_log: "{{ foreman_operations_scap_client_secure_logging }}"
 
 - name: Build scap content parameters
   set_fact:
