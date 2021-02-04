@@ -9,11 +9,16 @@
 
 
   tasks:
-    - name: Check Satellite Status
+    - name: check satellite status
       redhat.satellite.status_info:
         validate_certs: false
 
-    - name: Deploy satellite_infra workloads
+    - name: refresh manifest
+      redhat.satellite.subscription_manifest:
+        organization: "Default Organization"
+        state: refresh
+
+    - name: deploy satellite_infra workloads
       include_role:
         name: "{{ satellite_infra_vars }}"
       loop: "{{ satellite_infra_workloads }}"
