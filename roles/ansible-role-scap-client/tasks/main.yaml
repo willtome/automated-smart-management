@@ -8,7 +8,7 @@
 
 - name: Get Policy parameters
   uri:
-    url: https://{{ foreman_server_url }}/api/v2/compliance/policies
+    url: "{{ foreman_server_url }}/api/v2/compliance/policies"
     method: GET
     user: "{{ foreman_username }}"
     password:  "{{ foreman_password }}"
@@ -30,7 +30,7 @@
 
 - name: Get scap content information
   uri:
-    url: https://{{ foreman_server_url }}/api/v2/compliance/scap_contents/{{item.scap_content_id}}
+    url: "{{ foreman_server_url }}/api/v2/compliance/scap_contents/{{item.scap_content_id}}"
     method: GET
     user: "{{ foreman_username }}"
     password: "{{ foreman_password }}"
@@ -43,7 +43,7 @@
 
 - name: Get tailoring content information
   uri:
-    url: https://{{ foreman_server_url }}/api/v2/compliance/tailoring_files/{{item.tailoring_file_id}}
+    url: "{{ foreman_server_url }}/api/v2/compliance/tailoring_files/{{item.tailoring_file_id}}"
     method: GET
     user: "{{ foreman_username }}"
     password: "{{ foreman_password }}"
