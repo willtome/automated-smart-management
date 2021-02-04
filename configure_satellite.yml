@@ -16,7 +16,7 @@
     - name: refresh manifest
       redhat.satellite.subscription_manifest:
         organization: "Default Organization"
-        state: refresh
+        state: refreshed
 
     - name: deploy satellite_infra workloads
       include_role:
