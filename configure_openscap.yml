@@ -4,7 +4,7 @@
   vars:
     policy_name: all
   roles:
-    - ansible-role-scap-client
+    - scap_client
 
   tasks:
   - name: "Run SCAP Scan"
