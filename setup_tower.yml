@@ -1,0 +1,13 @@
+---
+- hosts: "{{ HOSTS | default('control[0]') }}"
+  connection: local
+  vars:
+    tower_infra_workloads: []
+
+  tasks:
+    - name: deploy tower_infra workloads
+      include_role:
+        name: "{{ tower_infra_vars }}"
+      loop: "{{ tower_infra_workloads }}"
+      loop_control:
+        loop_var: tower_infra_vars
