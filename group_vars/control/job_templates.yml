@@ -25,7 +25,7 @@ tower_templates:
       - Satellite Credential
     extra_vars:
       organization: "Default Organization"
-      lifecycle_environment: "{%raw%}{{ content_view }}_Dev{%endraw%}"
+      lifecycle_environment: content_view_Dev
     survey_enabled: true
     survey:
       name: ''
