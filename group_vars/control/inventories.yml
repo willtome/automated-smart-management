@@ -12,3 +12,5 @@ tower_inventory_sources:
       keyed_groups:
         - prefix: env
           key: foreman_content_facet_attributes.lifecycle_environment_name
+        - prefix: cv
+          key: foreman_content_facet_attributes.content_view_name

@@ -8,8 +8,8 @@
       username: "{{ lookup('env', 'FOREMAN_USER') }}"
       password: "{{ lookup('env', 'FOREMAN_PASSWORD') }}"
       validate_certs: no
-    organization: undef
-    lifecycle_environment: undef
+    organization: Default Organization
+    lifecycle_environment: "{{ content_view }}_{{ env }}"
     content_view: undef
 
   tasks:
