@@ -25,6 +25,7 @@ tower_templates:
             - QA
             - Prod
           required: true
+
   - name: Satellite / Publish Content View
     project: Automated Management
     playbook: satellite_publish.yml
@@ -43,6 +44,7 @@ tower_templates:
           type: multiplechoice
           choices: "{{ hostvars['satellite.example.com']['foreman_content_views'] | map(attribute='name') | list}}"
           required: true
+
   - name: Satellite / Promote Content View
     project: Automated Management
     playbook: satellite_promote.yml
@@ -69,6 +71,7 @@ tower_templates:
           type: multiplechoice
           choices: "{{ hostvars['satellite.example.com']['lifecycle_environments'] | map(attribute='name') | list}}"
           required: true
+
   - name: Server / Patch
     project: Automated Management
     playbook: server_patch.yml
@@ -93,3 +96,12 @@ tower_templates:
             - 'yes'
             - 'no'
           required: true
+
+  - name: Server / Fact Scan
+    project: Fact Scan
+    playbook: scan_facts.yml
+    inventory: Workshop Inventory
+    ask_limit_on_launch: true
+    use_fact_cache: true
+    credentials:
+      - Workshop Credential
