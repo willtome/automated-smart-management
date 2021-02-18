@@ -37,6 +37,7 @@
     state: present
     activationkey: "{{ activation_key }}"
     org_id: "{{ org_id | default('Default_Organization')}}"
+  throttle: 1
 
 - name: include repos
   include_vars: "vars/{{ ansible_distribution + ansible_distribution_major_version }}.yml"
