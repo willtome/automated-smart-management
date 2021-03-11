@@ -13,12 +13,12 @@
       redhat.satellite.status_info:
         validate_certs: false
 
-    - name: refresh manifest
-      redhat.satellite.subscription_manifest:
-        organization: "Default Organization"
-        state: refreshed
-      async: 2000
-      poll: 60
+    # - name: refresh manifest
+    #   redhat.satellite.subscription_manifest:
+    #     organization: "Default Organization"
+    #     state: refreshed
+    #   async: 2000
+    #   poll: 60
 
     - name: deploy satellite_infra workloads
       include_role:
