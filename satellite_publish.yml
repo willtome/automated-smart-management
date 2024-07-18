@@ -1,13 +1,9 @@
 ---
-- hosts: localhost
+- name: publish new version of content view
+  hosts: localhost
   connection: local
-  gather_facts: no
+  gather_facts: true
   vars:
-    login: &login
-      server_url: "{{ lookup('env', 'FOREMAN_SERVER') }}"
-      username: "{{ lookup('env', 'FOREMAN_USER') }}"
-      password: "{{ lookup('env', 'FOREMAN_PASSWORD') }}"
-      validate_certs: no
     organization: undef
     lifecycle_environment: undef
     content_view: undef
@@ -15,7 +11,6 @@
   tasks:
   - name: Publish Content View
     redhat.satellite.content_view_version:
-      <<: *login
       content_view: "{{ content_view }}"
       organization: "{{ organization }}"
       lifecycle_environments: "{{ lifecycle_environment }}"

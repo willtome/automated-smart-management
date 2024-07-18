@@ -1,6 +1,7 @@
 ---
 collections:
-  - redhat.satellite
+  - name: redhat.satellite
+    version: 4.1.0
   - redhat.insights
   - ansible.tower
   - amazon.aws
