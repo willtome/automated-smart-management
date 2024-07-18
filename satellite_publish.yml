@@ -4,6 +4,11 @@
   connection: local
   gather_facts: true
   vars:
+    login: &login
+      server_url: "{{ lookup('env', 'SATELLITE_SERVER_URL') }}"
+      username: "{{ lookup('env', 'SATELLITE_USERNAME') }}"
+      password: "{{ lookup('env', 'SATELLITE_PASSWORD') }}"
+      validate_certs: no
     organization: undef
     lifecycle_environment: undef
     content_view: undef
@@ -11,6 +16,7 @@
   tasks:
   - name: Publish Content View
     redhat.satellite.content_view_version:
+      <<: *login
       content_view: "{{ content_view }}"
       organization: "{{ organization }}"
       lifecycle_environments: "{{ lifecycle_environment }}"
